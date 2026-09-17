@@ -1,0 +1,672 @@
+.demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px max(22px, calc((100vw - 1184px) / 2));
+  background: #26203980;
+  border-bottom: 1px solid #a58bff20;
+  font-size: 12px;
+  color: #c3b6df;
+}
+.demo-banner span,
+.demo-banner a {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.demo-banner a:hover {
+  color: white;
+}
+.primary {
+  background: linear-gradient(110deg, #bda1ff, #9684ed);
+  color: #161126;
+  box-shadow: 0 5px 30px #9c70ff20;
+}
+.primary:hover {
+  background: linear-gradient(110deg, #ccbbff, #ab97ff);
+}
+.form-card {
+  padding: 25px;
+}
+.signed-in {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--cyan);
+  padding-bottom: 20px;
+  overflow-wrap: anywhere;
+}
+.signed-in span {
+  min-width: 0;
+}
+.signed-in .text-button {
+  margin-left: auto;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.full {
+  grid-column: 1/-1;
+}
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: #cfd1e2;
+}
+input,
+select {
+  min-width: 0;
+  width: 100%;
+  height: 48px;
+  border: 1px solid #a3a0c629;
+  border-radius: 10px;
+  background: #090d1d77;
+  padding: 11px 13px;
+  color: var(--fg);
+  outline-offset: 2px;
+}
+input::placeholder {
+  color: #737e9a;
+}
+input:read-only {
+  color: #929bb6;
+  background: #181d31;
+}
+select option {
+  background: #15182d;
+  color: white;
+}
+.input-note {
+  font-size: 12px;
+  color: #8e99b4;
+  margin-top: -10px;
+}
+.checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 11px;
+  margin: 21px 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.checkbox input {
+  accent-color: #b899ff;
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  margin: 2px 0;
+}
+.checkbox small {
+  color: #8e99b4;
+  font-size: 12px;
+}
+.form-privacy {
+  font-size: 12px;
+  color: #9099b1;
+  margin-bottom: 21px;
+}
+.form-privacy a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: #c9b7ff;
+}
+.stage-form h1 {
+  font-size: 46px;
+}
+.stage-form .lead {
+  margin-top: 16px;
+}
+.stage-form .intro {
+  max-width: 540px;
+}
+.stage-form {
+  align-items: start;
+  padding-top: 20px;
+}
+.stage-form .wheel-section {
+  position: sticky;
+  top: 45px;
+  margin-top: 45px;
+}
+.text-button {
+  background: transparent;
+  color: #b4a2df;
+  padding: 5px;
+  font-size: 13px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.text-button:hover {
+  text-decoration: underline;
+}
+.spin-card {
+  padding: 26px;
+}
+.prize-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
+.prize-list > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #d2d4e3;
+}
+.prize-list svg {
+  color: #b7a1e9;
+}
+.prize-list small {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid #c4a0ff33;
+  border-radius: 6px;
+  color: #c9b2ff;
+  background: #9e7ae50a;
+}
+.logout {
+  margin: 10px auto 0;
+  display: flex;
+}
+.spin-action {
+  width: min(100%, 390px);
+  text-align: center;
+}
+.spin-button {
+  min-height: 58px;
+  font-size: 16px;
+}
+.spin-button > svg:last-child {
+  margin-left: auto;
+}
+.odds {
+  max-width: 365px;
+  width: 100%;
+  margin-top: 24px;
+  font-size: 12px;
+  color: #8d97b2;
+}
+.odds summary {
+  cursor: pointer;
+  text-align: center;
+  min-height: 32px;
+}
+.odds ul {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+.odds li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px;
+}
+.odds p {
+  font-size: 12px;
+}
+.demo-controls {
+  margin-top: 18px;
+  font-size: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  color: #a5abc0;
+}
+.demo-controls summary {
+  cursor: pointer;
+  min-height: 25px;
+}
+.demo-controls label {
+  margin-top: 10px;
+  font-size: 12px;
+}
+.error-message {
+  padding: 15px;
+  border: 1px solid #f9959566;
+  background: #af3f3f15;
+  border-radius: 12px;
+  color: #ffbfbf;
+  margin-top: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.steps .done {
+  color: #929daf;
+}
+.result-layout {
+  max-width: 1184px;
+  margin: auto;
+  padding: 40px 0 65px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 100px;
+  align-items: center;
+  min-height: calc(100svh - 240px);
+}
+.result-emblem {
+  width: 104px;
+  height: 104px;
+  border-radius: 30px;
+  margin: 30px 0;
+  background: linear-gradient(130deg, #b596ff2b, #789fd719);
+  border: 1px solid #c2a9ff55;
+  color: #cdb6ff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 80px #a579ff23;
+  transform: rotate(-7deg);
+}
+.result-emblem svg {
+  transform: rotate(7deg);
+}
+.result-emblem.no-win {
+  color: #a6daed;
+}
+.result-copy {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #9da7c1;
+  margin-top: 22px;
+}
+.result-copy strong {
+  color: #ddd8ef;
+  font-weight: 500;
+}
+.prize-ticket {
+  padding: 30px;
+  position: relative;
+  border-color: #b296ee4d;
+  background: linear-gradient(130deg, #ab8dff15, #ffffff04);
+}
+.ticket-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+.ticket-top > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 1.2px;
+  color: #c2afe7;
+}
+.status-pill {
+  font-size: 11px;
+  border-radius: 20px;
+  padding: 6px 9px;
+  background: #79d9c514;
+  border: 1px solid #79d9c530;
+  color: #9edbcf;
+  white-space: nowrap;
+}
+.prize-ticket h2 {
+  font-size: 30px;
+  letter-spacing: -1px;
+  font-weight: 500;
+}
+.prize-ticket > p {
+  font-size: 14px;
+  color: #a4adc5;
+  margin-top: 12px;
+}
+.ticket-divider {
+  border-top: 1px dashed #b7a5d940;
+  margin: 25px 0;
+}
+.field-caption {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #8f9ab8;
+}
+.claim-code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 7px;
+}
+.claim-code strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 27px;
+  letter-spacing: 2px;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.icon-button {
+  background: #b9a1f211;
+  border: 1px solid #b9a1f22a;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  color: #b6a2e4;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.prize-ticket p.ticket-hint {
+  font-size: 12px;
+  color: #8a96b2;
+}
+.social-card {
+  margin-top: 20px;
+  padding: 28px;
+}
+.social-card .eyebrow {
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  margin-bottom: 12px;
+}
+.social-card h2 {
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -1px;
+}
+.social-card h2 span {
+  color: var(--purple);
+}
+.social-card > p {
+  color: #939eb9;
+  font-size: 14px;
+  margin-top: 10px;
+}
+.social-links {
+  display: flex;
+  gap: 10px;
+  margin-top: 23px;
+}
+.social-links a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 47px;
+  flex: 1;
+  border: 1px solid #b6a1ef33;
+  background: #a98bed0a;
+  border-radius: 10px;
+  font-size: 14px;
+}
+.social-links a:hover {
+  background: #a98bed1c;
+}
+.social-links svg:first-child {
+  color: #c0a8fa;
+}
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: #b2a1d6;
+}
+.social-card > .text-link {
+  margin-top: 20px;
+}
+.reset {
+  margin: 18px auto 0;
+  display: flex;
+}
+.success-text {
+  color: #9fddc6 !important;
+  font-size: 13px !important;
+}
+.site-footer nav {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+.legal {
+  max-width: 800px;
+  margin: 30px auto 70px;
+  padding: 40px;
+}
+.legal h1 {
+  font-size: 48px;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+.legal h2 {
+  font-size: 21px;
+  margin: 28px 0 12px;
+}
+.legal p,
+.legal li {
+  color: #b5bdd1;
+  line-height: 1.8;
+  font-size: 16px;
+}
+.legal p + p {
+  margin-top: 18px;
+}
+.legal li {
+  padding: 4px 0;
+}
+.notice {
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.spin-icon {
+  animation: spin 1.2s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+h1:focus {
+  outline: none;
+}
+@media (max-width: 1280px) {
+  .result-layout {
+    padding: 30px 48px 65px;
+    gap: 60px;
+  }
+}
+@media (max-width: 1000px) {
+  .result-layout {
+    padding: 30px 32px 50px;
+    gap: 32px;
+  }
+  .result-layout h1 {
+    font-size: 46px;
+  }
+  .prize-ticket,
+  .social-card {
+    padding: 24px;
+  }
+  .claim-code strong {
+    font-size: 23px;
+  }
+}
+@media (max-width: 760px) {
+  .demo-banner {
+    font-size: 11px;
+    justify-content: center;
+    text-align: center;
+    padding: 9px 16px;
+  }
+  .demo-banner > a {
+    display: none;
+  }
+  .demo-banner span {
+    gap: 5px;
+  }
+  .stage-form h1 {
+    font-size: 38px;
+    letter-spacing: -1.6px;
+    overflow-wrap: anywhere;
+  }
+  .stage-form .wheel-section {
+    display: none;
+  }
+  .form-card {
+    padding: 20px;
+  }
+  .form-grid {
+    gap: 15px 12px;
+  }
+  .form-grid input,
+  .form-grid select {
+    font-size: 16px;
+  }
+  .signed-in {
+    font-size: 12px;
+  }
+  .stage-wheel .intro {
+    display: contents;
+  }
+  .stage-wheel .intro > h1,
+  .stage-wheel .intro > .lead,
+  .stage-wheel .intro > .eyebrow,
+  .stage-wheel .intro > .steps,
+  .stage-wheel .intro > .event-caption {
+    display: none;
+  }
+  .stage-wheel .wheel-section {
+    grid-row: 1;
+  }
+  .stage-wheel .spin-card {
+    grid-row: 2;
+    max-width: 520px;
+    width: 100%;
+    margin: auto;
+  }
+  .stage-wheel {
+    gap: 24px;
+    padding-top: 10px;
+  }
+  .stage-wheel .wheel-wrap {
+    max-width: 340px;
+  }
+  .spin-action {
+    max-width: 350px;
+  }
+  .stage-wheel .odds {
+    margin-top: 16px;
+  }
+  .result-layout {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 16px 22px 36px;
+  }
+  .result-intro {
+    text-align: center;
+  }
+  .result-intro .eyebrow {
+    justify-content: center;
+    font-size: 11px;
+  }
+  .result-emblem {
+    margin: 24px auto;
+    width: 85px;
+    height: 85px;
+    border-radius: 25px;
+  }
+  .result-emblem svg {
+    width: 43px;
+  }
+  .result-layout h1 {
+    font-size: 45px;
+  }
+  .result-intro .lead {
+    font-size: 15px;
+  }
+  .result-copy {
+    font-size: 14px;
+    margin-top: 18px;
+  }
+  .result-right {
+    width: 100%;
+    max-width: 520px;
+    margin: auto;
+  }
+  .prize-ticket,
+  .social-card {
+    padding: 23px;
+  }
+  .prize-ticket h2 {
+    font-size: 26px;
+  }
+  .claim-code strong {
+    font-size: 23px;
+  }
+  .ticket-top {
+    gap: 8px;
+  }
+  .ticket-top > span:first-child {
+    font-size: 11px;
+    letter-spacing: 0.7px;
+  }
+  .social-card h2 {
+    font-size: 24px;
+  }
+  .social-links {
+    gap: 8px;
+  }
+  .social-links a {
+    gap: 7px;
+    font-size: 13px;
+  }
+  .site-footer nav {
+    gap: 15px;
+  }
+  .legal {
+    margin: 20px 20px 40px;
+    padding: 24px;
+  }
+  .legal h1 {
+    font-size: 40px;
+  }
+  .legal p,
+  .legal li {
+    font-size: 15px;
+  }
+  .stage-wheel .error-message {
+    grid-row: 3;
+  }
+  .result-layout .error-message {
+    margin: 0;
+  }
+}
+@media (max-width: 360px) {
+  h1 {
+    font-size: 41px;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .full {
+    grid-column: auto;
+  }
+  .social-links {
+    flex-direction: column;
+  }
+  .event-badge {
+    font-size: 9px;
+    padding: 7px;
+  }
+  .claim-code strong {
+    font-size: 20px;
+  }
+  .card-heading h2 {
+    font-size: 16px;
+  }
+}
