@@ -356,3 +356,14 @@ td small {
     padding: 0;
   }
 }
+
+.admin-login-form {
+  display: grid;
+  gap: 18px;
+  width: min(100%, 360px);
+  margin: 24px auto 0;
+  text-align: left;
+}
+.admin-login-form .button {
+  width: 100%;
+}

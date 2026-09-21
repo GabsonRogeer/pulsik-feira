@@ -53,8 +53,7 @@ export type Participant = {
   company: string;
   job_title: string;
   email: string;
-  city: string;
-  state: string;
+  phone: string | null;
   marketing: boolean;
   status: "ready" | "complete";
   outcome: Outcome | null;
@@ -67,32 +66,3 @@ export type SpinResult = {
   outcome: Outcome;
   claim_code: string | null;
 };
-export const STATES = [
-  "AC",
-  "AL",
-  "AP",
-  "AM",
-  "BA",
-  "CE",
-  "DF",
-  "ES",
-  "GO",
-  "MA",
-  "MT",
-  "MS",
-  "MG",
-  "PA",
-  "PB",
-  "PR",
-  "PE",
-  "PI",
-  "RJ",
-  "RN",
-  "RS",
-  "RO",
-  "RR",
-  "SC",
-  "SP",
-  "SE",
-  "TO",
-];

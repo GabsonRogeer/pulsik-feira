@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import "./globals.css";
-import "./flow.css";
-import "./admin.css";
+import "@/styles/globals.css";
+import "@/styles/experience.css";
+import "@/styles/admin.css";
 export const metadata: Metadata = {
   title: "Pulsik | Sua sorte conecta aqui",
   description:

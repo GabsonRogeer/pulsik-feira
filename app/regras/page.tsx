@@ -15,9 +15,9 @@ export default function Rules() {
         </h1>
         <p>
           A ação da Pulsik acontece de 7 a 9 de outubro de 2026, no Siará Tech
-          Summit. Entre com Google, complete o cadastro e utilize seu giro
-          inicial. É permitida uma participação por conta/e-mail durante todo o
-          evento.
+          Summit. Entre com Google ou código por e-mail, complete o cadastro e
+          utilize seu giro inicial. É permitida uma participação por
+          conta/e-mail durante todo o evento.
         </p>
         <h2>Resultados e chances</h2>
         <ul>

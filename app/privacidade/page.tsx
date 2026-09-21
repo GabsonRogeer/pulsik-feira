@@ -14,11 +14,11 @@ export default function Privacy() {
         </h1>
         <h2>Participação na ação Pulsik</h2>
         <p>
-          Nome, empresa, cargo, e-mail, cidade e estado são usados pela Pulsik
-          para identificar sua participação no Siará Tech Summit, impedir
-          cadastros repetidos e organizar a entrega dos brindes. O login Google
-          identifica sua conta; não pedimos acesso ao Gmail ou aos seus
-          arquivos.
+          Nome, empresa, cargo, e-mail e telefone são usados pela Pulsik para
+          identificar sua participação no Siará Tech Summit, impedir cadastros
+          repetidos e organizar a entrega dos brindes. O login com Google ou
+          código por e-mail identifica sua conta; não pedimos acesso ao Gmail ou
+          aos seus arquivos.
         </p>
         <h2>Novidades da Pulsik</h2>
         <p>

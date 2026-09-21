@@ -25,16 +25,19 @@ async function user(
   await db.query("insert into auth.identities values($1,$2)", [id, provider]);
   return id;
 }
-async function register(id, name = "Visitante Teste") {
+async function register(
+  id,
+  name = "Visitante Teste",
+  phone = "(85) 98925-5170",
+) {
   await asUser(id);
   return (
-    await db.query("select public.pulsik_register($1,$2,$3,$4,$5,$6,$7) as p", [
+    await db.query("select public.pulsik_register($1,$2,$3,$4,$5,$6) as p", [
       campaign,
       name,
       "Empresa Modelo",
       "Diretor",
-      "Fortaleza",
-      "CE",
+      phone,
       false,
     ])
   ).rows[0].p;
@@ -70,6 +73,43 @@ test("Pulsik: atomic participation, inventory, identity and redemption", async (
       "utf8",
     ),
   );
+  await db.exec(
+    await readFile(
+      new URL(
+        "../supabase/migrations/202609170002_email_login.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  await db.exec(
+    await readFile(
+      new URL(
+        "../supabase/migrations/202609210001_participant_phone.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  await t.test(
+    "phone replaces location and rejects incomplete numbers",
+    async () => {
+      const id = await user();
+      await owner();
+      await db.exec(
+        "update public.pulsik_campaigns set starts_at=now()-interval '1 day',ends_at=now()+interval '1 day'",
+      );
+      for (const phone of [null, "", "8598925517", "5585989255170"])
+        await assert.rejects(
+          register(id, "Visitante Teste", phone),
+          /invalid_phone/,
+        );
+      const p = await register(id);
+      assert.equal(p.phone, "85989255170");
+      assert.equal(p.city, null);
+      assert.equal(p.state, null);
+    },
+  );
   await t.test("closed campaign rejects registration", async () => {
     const id = await user();
     await owner();
@@ -82,16 +122,41 @@ test("Pulsik: atomic participation, inventory, identity and redemption", async (
       "update public.pulsik_campaigns set starts_at=now()-interval '1 day',ends_at=now()+interval '1 day'",
     );
   });
-  await t.test("only verified Google identities can register", async () => {
-    const id = await user(undefined, "email");
-    await assert.rejects(register(id), /google_required/);
+  await t.test("only supported, verified identities can register", async () => {
+    const id = await user(undefined, "apple");
+    await assert.rejects(register(id), /verified_email_required/);
     const unverified = await user();
     await owner();
     await db.query(
       "update auth.users set email_confirmed_at=null where id=$1",
       [unverified],
     );
-    await assert.rejects(register(unverified), /google_required/);
+    await assert.rejects(register(unverified), /verified_email_required/);
+  });
+  await t.test(
+    "email OTP identity can register and cannot repeat via Google",
+    async () => {
+      const email = "otp-visitor@example.com";
+      const id = await user(email, "email");
+      const participant = await register(id);
+      assert.equal(participant.email, email);
+      assert.equal((await register(id)).id, participant.id);
+      const googleDuplicate = await user(" OTP-VISITOR@example.com ", "google");
+      await assert.rejects(register(googleDuplicate), /duplicate_email/);
+      await owner();
+      // Linking Google to the same account must reuse the participation.
+      await db.query("insert into auth.identities values($1,'google')", [id]);
+      assert.equal((await register(id)).id, participant.id);
+    },
+  );
+  await t.test("unverified email identities cannot register", async () => {
+    const id = await user(undefined, "email");
+    await owner();
+    await db.query(
+      "update auth.users set email_confirmed_at=null where id=$1",
+      [id],
+    );
+    await assert.rejects(register(id), /verified_email_required/);
   });
   let firstUser, first;
   await t.test(
@@ -264,6 +329,24 @@ test("Pulsik: atomic participation, inventory, identity and redemption", async (
       );
       assert.equal((await spin(firstUser)).outcome, "cup");
       await assert.rejects(spin(id), /campaign_closed/);
+    },
+  );
+  await t.test(
+    "email participant retains final result on a second login",
+    async () => {
+      await owner();
+      await db.exec(
+        "update public.pulsik_campaigns set starts_at=now()-interval '1 day',ends_at=now()+interval '1 day'",
+      );
+      const id = await user(undefined, "email");
+      const p = await register(id);
+      await roll(50);
+      const result = await spin(id);
+      assert.equal(result.outcome, "none");
+      const returned = await register(id);
+      assert.equal(returned.id, p.id);
+      assert.equal(returned.status, "complete");
+      assert.equal((await spin(id)).id, result.id);
     },
   );
 });

@@ -670,3 +670,56 @@ h1:focus {
     font-size: 16px;
   }
 }
+
+.email-login {
+  margin-top: 16px;
+}
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  height: 1px;
+  background: var(--line);
+  flex: 1;
+}
+.email-login .button {
+  width: 100%;
+}
+.email-login-form {
+  display: grid;
+  gap: 12px;
+}
+.email-destination {
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.email-code {
+  text-align: center;
+  font-size: 24px;
+  letter-spacing: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.email-login-actions {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+.email-auth-notice {
+  font-size: 13px;
+  color: var(--cyan);
+  margin-bottom: 0;
+}
+.email-login button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
