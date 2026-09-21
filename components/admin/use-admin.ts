@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { CAMPAIGN, type Participant } from "@/lib/config";
 import { adminSupabase as supabase } from "@/lib/admin-supabase";
-import { signInAdmin } from "@/lib/admin-auth";
+import { signInAdmin, adminLoginError } from "@/lib/admin-auth";
 import { exportParticipantsCSV } from "@/lib/export-participants";
 import { demoRows } from "./demo-data";
 export function useAdmin() {
@@ -161,12 +161,7 @@ export function useAdmin() {
       setAuthorized(false);
       setRows([]);
       setSelected(null);
-      const status = (e as { status?: number }).status;
-      setMessage(
-        status === 429
-          ? "Muitas tentativas. Aguarde um pouco para entrar novamente."
-          : "Não foi possível entrar. Confira o usuário, a senha e a autorização da conta.",
-      );
+      setMessage(adminLoginError(e));
     } finally {
       setPassword("");
       setSigningIn(false);

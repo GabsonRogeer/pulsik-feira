@@ -106,7 +106,7 @@ Execute no SQL Editor a migração `supabase/migrations/202609210001_participant
 
 ## Login administrativo com usuário e senha
 
-O painel aceita o usuário `pulsikadmin`. Internamente ele corresponde a `pulsikadmin@admin.pulsik.com.br`, pois o Supabase autentica por e-mail. O operador só digita usuário e senha. A senha é validada pelo Supabase e não está no código nem em variáveis públicas.
+O painel aceita o usuário `pulsikadmin`. Internamente ele corresponde a `pulsikadmin@pulsik.com.br`, pois o Supabase autentica por e-mail. O operador só digita usuário e senha. A senha é validada pelo Supabase e não está no código nem em variáveis públicas.
 
 Para ativar, em Authentication → Users → Add user → Create new user, cadastre esse endereço interno com a senha definida pelo responsável e marque Auto Confirm User. Não use Send invitation. Depois execute `supabase/setup-admin.sql` no SQL Editor. Mantenha o provedor Email habilitado e publique o código na Vercel. O e-mail interno não precisa receber mensagens para esse acesso por senha.
 

@@ -89,3 +89,9 @@ test("wrong passwords never reach admin authorization", async () => {
   );
   assert.equal(called, false);
 });
+
+test('login and SQL authorization target the same administrator email', async () => {
+  const sql = await readFile(new URL('../supabase/setup-admin.sql', import.meta.url), 'utf8');
+  const match = sql.match(/lower\(email\)\s*=\s*'([^']+)'/);
+  assert.equal(match?.[1], ADMIN_EMAIL);
+});
