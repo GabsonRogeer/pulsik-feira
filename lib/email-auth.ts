@@ -1,52 +1,44 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-type AuthClient = Pick<SupabaseClient["auth"], "signInWithOtp" | "verifyOtp">;
+import { signIn, getSession } from "next-auth/react";
+import { api, type LoginUser } from "./api-client";
 export function normalizeEmail(value: string) {
   const email = value.trim().toLowerCase();
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     throw new Error("invalid_email");
   return email;
 }
-export async function sendEmailCode(auth: AuthClient, value: string) {
+export async function sendEmailCode(value: string) {
   const email = normalizeEmail(value);
-  const { error } = await auth.signInWithOtp({
-    email,
-    options: { shouldCreateUser: true },
-  });
-  if (error) throw error;
+  await api("/api/email-code", { email });
   return email;
 }
 export async function verifyEmailCode(
-  auth: AuthClient,
   email: string,
   value: string,
-) {
-  const token = value.replace(/\s/g, "");
-  if (!/^\d{6}$/.test(token)) throw new Error("invalid_code");
-  const { data, error } = await auth.verifyOtp({
+): Promise<LoginUser> {
+  const code = value.replace(/\s/g, "");
+  if (!/^\d{6}$/.test(code)) throw new Error("invalid_code");
+  const result = await signIn("email-code", {
     email: normalizeEmail(email),
-    token,
-    type: "email",
+    code,
+    redirect: false,
   });
-  if (error) throw error;
-  if (!data.session || !data.user) throw new Error("missing_session");
-  return data.user;
+  if (!result || result.error) throw new Error("invalid_code");
+  const session = await getSession();
+  if (!session?.user?.email) throw new Error("missing_session");
+  return {
+    id: session.user.id,
+    email: session.user.email,
+    name: session.user.name,
+  };
 }
 export function emailAuthError(error: unknown) {
-  const e = error as { code?: string; message?: string; status?: number };
-  const message = e?.message || "";
-  if (message === "invalid_email" || e?.code === "email_address_invalid")
-    return "Informe um e-mail válido.";
-  if (message === "invalid_code")
-    return "Digite os 6 números do código recebido.";
-  if (e?.code === "otp_expired" || /expired|invalid.*token/i.test(message))
+  const e = error as { message?: string; status?: number };
+  if (e?.message === "invalid_email") return "Informe um e-mail válido.";
+  if (e?.message === "invalid_code")
     return "Código inválido ou expirado. Confira o e-mail mais recente ou solicite outro código.";
-  if (e?.status === 429 || e?.code?.includes("rate_limit"))
-    return "Muitas tentativas. Aguarde um pouco antes de tentar novamente.";
-  if (
-    e?.code === "email_provider_disabled" ||
-    e?.code === "email_address_not_authorized" ||
-    /sending.*email/i.test(message)
-  )
-    return "O envio de códigos está indisponível no momento. Tente entrar com Google ou procure nossa equipe.";
+  if (e?.status === 429)
+    return "Muitas tentativas. Aguarde um pouco para tentar novamente.";
+  if (e?.message === "email_unavailable")
+    return "O envio de códigos está indisponível. Tente entrar com Google ou procure nossa equipe.";
   return "Não foi possível concluir o acesso. Confira sua conexão e tente novamente.";
 }

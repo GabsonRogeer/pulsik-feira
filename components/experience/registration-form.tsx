@@ -21,7 +21,7 @@ export function RegistrationForm({ model }: { model: ExperienceModel }) {
           <input
             name="name"
             autoComplete="name"
-            defaultValue={demo ? "" : user?.user_metadata?.full_name || ""}
+            defaultValue={demo ? "" : user?.name || ""}
             placeholder="Como podemos chamar você?"
             required
             minLength={2}

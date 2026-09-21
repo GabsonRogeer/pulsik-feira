@@ -1,13 +1,12 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import type { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+import type { LoginUser } from "@/lib/api-client";
 import {
   emailAuthError,
   sendEmailCode,
   verifyEmailCode,
 } from "@/lib/email-auth";
-export function useEmailLogin(onVerified: (user: User) => Promise<void>) {
+export function useEmailLogin(onVerified: (user: LoginUser) => Promise<void>) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [sentEmail, setSentEmail] = useState("");
@@ -33,13 +32,13 @@ export function useEmailLogin(onVerified: (user: User) => Promise<void>) {
   }, [sentEmail]);
   async function send(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
-    if (!supabase || lock.current || Date.now() < resendAt.current) return;
+    if (lock.current || Date.now() < resendAt.current) return;
     lock.current = true;
     setBusy(true);
     setError("");
     setNotice("");
     try {
-      const address = await sendEmailCode(supabase.auth, sentEmail || email);
+      const address = await sendEmailCode(sentEmail || email);
       resendAt.current = Date.now() + 60000;
       setRemaining(60);
       setSentEmail(address);
@@ -59,13 +58,13 @@ export function useEmailLogin(onVerified: (user: User) => Promise<void>) {
   }
   async function verify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!supabase || !sentEmail || lock.current) return;
+    if (!sentEmail || lock.current) return;
     lock.current = true;
     setBusy(true);
     setError("");
     setNotice("");
     try {
-      const user = await verifyEmailCode(supabase.auth, sentEmail, code);
+      const user = await verifyEmailCode(sentEmail, code);
       setCode("");
       await onVerified(user);
     } catch (e) {

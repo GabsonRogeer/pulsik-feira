@@ -6,3 +6,5 @@ out/
 *.tsbuildinfo
 .sites-runtime/
 work/
+
+.env.nextauth.example

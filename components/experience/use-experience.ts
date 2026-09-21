@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import type { User } from "@supabase/supabase-js";
+import { getSession, signIn, signOut } from "next-auth/react";
+import { api, type LoginUser } from "@/lib/api-client";
 import {
   CAMPAIGN,
   PRIZES,
@@ -11,14 +12,13 @@ import {
 import { normalizePhone } from "@/lib/phone";
 import { errorText } from "@/lib/errors";
 import { celebrate } from "@/lib/celebrate";
-import { supabase } from "@/lib/supabase";
 import { useEmailLogin } from "./use-email-login";
 type Step = "welcome" | "form" | "wheel" | "result";
 const DEMO_KEY = "pulsik-demo-v1";
 export function useExperience(forceDemo = false) {
-  const demo = forceDemo || !supabase;
+  const demo = forceDemo;
   const [step, setStep] = useState<Step>("welcome");
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<LoginUser | null>(null);
   const [participant, setParticipant] = useState<Participant | null>(null);
   const [busy, setBusy] = useState(false);
   const [initializing, setInitializing] = useState(!demo);
@@ -36,30 +36,27 @@ export function useExperience(forceDemo = false) {
   const lock = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  async function refresh(u: User) {
-    if (!supabase) return;
-    const { data, error: e } = await supabase
-      .from("pulsik_participants")
-      .select("*")
-      .eq("campaign_id", CAMPAIGN)
-      .eq("user_id", u.id)
-      .maybeSingle();
-    if (e) throw e;
-    if (data) {
-      setParticipant(data);
-      setStep(data.status === "complete" ? "result" : "wheel");
-    } else setStep("form");
-    const { data: inventory } = await supabase
-      .from("pulsik_prizes")
-      .select("id,remaining")
-      .eq("campaign_id", CAMPAIGN);
-    if (inventory)
-      setStock(Object.fromEntries(inventory.map((x) => [x.id, x.remaining])));
+  async function refresh() {
+    const result = await api<{
+      user: LoginUser;
+      participant: Participant | null;
+      stock: { id: string; remaining: number }[];
+    }>("/api/participation");
+    setUser(result.user);
+    setParticipant(result.participant);
+    setStep(
+      result.participant
+        ? result.participant.status === "complete"
+          ? "result"
+          : "wheel"
+        : "form",
+    );
+    setStock(Object.fromEntries(result.stock.map((x) => [x.id, x.remaining])));
   }
   const emailLogin = useEmailLogin(async (u) => {
     setUser(u);
     try {
-      await refresh(u);
+      await refresh();
     } catch (e) {
       setError(errorText(e));
     }
@@ -77,32 +74,19 @@ export function useExperience(forceDemo = false) {
       } catch {}
       return;
     }
-    const client = supabase!;
-    client.auth
-      .getSession()
-      .then(async ({ data, error: e }) => {
-        if (e) throw e;
-        if (data.session && active) {
-          setUser(data.session.user);
-          await refresh(data.session.user);
-        }
+    getSession()
+      .then(async (session) => {
+        if (active && session?.user) await refresh();
+        const error = new URLSearchParams(window.location.search).get("error");
+        if (active && error)
+          setError(
+            "Não foi possível concluir o login. Tente novamente ou entre com código por e-mail.",
+          );
       })
       .catch((e) => active && setError(errorText(e)))
       .finally(() => active && setInitializing(false));
-    const { data: subscription } = client.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "SIGNED_IN" && session && active) {
-          setUser(session.user);
-          setTimeout(
-            () => refresh(session.user).catch((e) => setError(errorText(e))),
-            0,
-          );
-        }
-      },
-    );
     return () => {
       active = false;
-      subscription.subscription.unsubscribe();
     };
   }, [demo]);
   useEffect(
@@ -180,14 +164,7 @@ export function useExperience(forceDemo = false) {
     setBusy(true);
     setError("");
     try {
-      const { error: e } = await supabase!.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: window.location.origin + "/",
-          queryParams: { prompt: "select_account" },
-        },
-      });
-      if (e) throw e;
+      await signIn("google", { callbackUrl: "/" });
     } catch (e) {
       setError(errorText(e));
       setBusy(false);
@@ -228,16 +205,7 @@ export function useExperience(forceDemo = false) {
         });
         setStep("wheel");
       } else {
-        const { data, error: e } = await supabase!.rpc("pulsik_register", {
-          p_campaign: CAMPAIGN,
-          p_name: values.name,
-          p_company: values.company,
-          p_job_title: values.job_title,
-          p_phone: values.phone,
-          p_marketing: values.marketing,
-        });
-        if (e) throw e;
-        const p = data as Participant;
+        const p = await api<Participant>("/api/participation", values);
         setParticipant(p);
         setStep(p.status === "complete" ? "result" : "wheel");
       }
@@ -278,12 +246,7 @@ export function useExperience(forceDemo = false) {
           requestId = crypto.randomUUID();
           localStorage.setItem(key, requestId);
         }
-        const { data, error: e } = await supabase!.rpc("pulsik_spin", {
-          p_campaign: CAMPAIGN,
-          p_request: requestId,
-        });
-        if (e) throw e;
-        result = data as SpinResult;
+        result = await api<SpinResult>("/api/spin", { requestId });
         localStorage.removeItem(key);
       }
       const index = PRIZES.findIndex((p) => p.id === result.outcome);
@@ -335,8 +298,9 @@ export function useExperience(forceDemo = false) {
         sessionStorage.removeItem(DEMO_KEY);
       } catch {}
     } else {
-      const { error: e } = await supabase!.auth.signOut();
-      if (e) {
+      try {
+        await signOut({ redirect: false });
+      } catch (e) {
         setError(errorText(e));
         return;
       }

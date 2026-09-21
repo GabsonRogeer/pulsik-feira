@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { CAMPAIGN, type Participant } from "@/lib/config";
-import { adminSupabase as supabase } from "@/lib/admin-supabase";
+import { signOut } from "next-auth/react";
+import { api } from "@/lib/api-client";
 import { signInAdmin, adminLoginError } from "@/lib/admin-auth";
 import { exportParticipantsCSV } from "@/lib/export-participants";
 import { demoRows } from "./demo-data";
 export function useAdmin() {
-  const demo = !supabase;
+  const demo = false;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [signingIn, setSigningIn] = useState(false);
@@ -28,70 +29,37 @@ export function useAdmin() {
   const [qrUrl, setQrUrl] = useState("");
   const [qrOpen, setQrOpen] = useState(false);
   async function load() {
-    if (!supabase) return;
     const version = ++accessVersion.current;
     setLoading(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        setAuthorized(false);
-        setRows([]);
-        return;
-      }
-      const { data: role, error: e } = await supabase.rpc("pulsik_is_admin");
-      if (e || !role) {
-        setAuthorized(false);
-        setRows([]);
-        setSelected(null);
-        return;
-      }
-      setAuthorized(true);
-      let all: Participant[] = [];
-      for (let from = 0; ; from += 1000) {
-        const { data, error } = await supabase
-          .from("pulsik_participants")
-          .select("*")
-          .eq("campaign_id", CAMPAIGN)
-          .order("created_at", { ascending: false })
-          .order("id")
-          .range(from, from + 999);
-        if (error) throw error;
-        all = all.concat(data);
-        if (data.length < 1000) break;
-      }
+      const data = await api<{
+        rows: Participant[];
+        stock: { id: string; remaining: number }[];
+      }>("/api/admin");
       if (version !== accessVersion.current) return;
-      setRows(all);
-      const { data: stock, error: stockError } = await supabase
-        .from("pulsik_prizes")
-        .select("*")
-        .eq("campaign_id", CAMPAIGN);
-      if (stockError) throw stockError;
-      if (stock)
-        setRemaining(
-          Object.fromEntries(
-            stock.map((s) => [s.id, s.remaining]),
-          ) as typeof remaining,
+      setAuthorized(true);
+      setRows(data.rows);
+      setRemaining(
+        Object.fromEntries(
+          data.stock.map((x) => [x.id, x.remaining]),
+        ) as typeof remaining,
+      );
+    } catch (e) {
+      setAuthorized(false);
+      setRows([]);
+      setSelected(null);
+      if (![401, 403].includes((e as { status: number }).status))
+        setMessage(
+          "Não foi possível carregar o painel. Confira a configuração do servidor.",
         );
-    } catch {
-      setMessage("Não foi possível carregar os dados. Tente atualizar.");
     } finally {
       setLoading(false);
     }
   }
   useEffect(() => {
     void load();
-    const subscription = supabase?.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") {
-        accessVersion.current++;
-        setAuthorized(false);
-        setRows([]);
-        setSelected(null);
-        setLoading(false);
-      }
-    });
     return () => {
       accessVersion.current++;
-      subscription?.data.subscription.unsubscribe();
     };
   }, []);
   function lookup() {
@@ -115,10 +83,10 @@ export function useAdmin() {
           "Retirada simulada com sucesso. Nenhum brinde real foi entregue.",
         );
       } else {
-        const { data, error } = await supabase!.rpc("pulsik_redeem", {
-          p_code: selected.claim_code,
-        });
-        if (error) throw error;
+        const data = await api<{
+          participant: Participant;
+          already_redeemed: boolean;
+        }>("/api/admin", { code: selected.claim_code });
         setSelected(data.participant);
         setRows((old) =>
           old.map((r) => (r.id === data.participant.id ? data.participant : r)),
@@ -149,12 +117,12 @@ export function useAdmin() {
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!supabase || loginLock.current) return;
+    if (loginLock.current) return;
     loginLock.current = true;
     setSigningIn(true);
     setMessage("");
     try {
-      await signInAdmin(supabase, username, password);
+      await signInAdmin(username, password);
       setPassword("");
       await load();
     } catch (e) {
@@ -169,9 +137,9 @@ export function useAdmin() {
     }
   }
   async function logout() {
-    if (!supabase) return;
-    const { error } = await supabase.auth.signOut({ scope: "local" });
-    if (error) {
+    try {
+      await signOut({ redirect: false });
+    } catch {
       setMessage("Não foi possível sair. Tente novamente.");
       return;
     }
