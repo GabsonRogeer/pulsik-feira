@@ -3,11 +3,15 @@ import { createHmac, randomInt } from "node:crypto";
 import { compare } from "bcryptjs";
 import nodemailer from "nodemailer";
 import { db, rpc } from "./db";
+import { accessCodeEmail } from "../email/access-code";
 export function emailAddress(value: unknown) {
   const email = String(value || "")
     .trim()
     .toLowerCase();
-  if (email.length > 254 || !/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(email))
+  if (
+    email.length > 254 ||
+    !/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(email)
+  )
     throw new Error("invalid_email");
   return email;
 }
@@ -97,11 +101,7 @@ export async function sendCode(address: unknown, ip: string) {
     await transport.sendMail({
       from,
       to: { address: email, name: "" },
-      subject: "Seu código de acesso à Pulsik",
-      text:
-        "Seu código de acesso é " +
-        code +
-        ". Válido por 10 minutos. Se você não solicitou, ignore esta mensagem.",
+      ...accessCodeEmail(code),
     });
   } catch {
     await db()

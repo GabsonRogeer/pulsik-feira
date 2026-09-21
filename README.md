@@ -48,3 +48,7 @@ Os testes cobrem migração de identidades, preservação de prêmios/estoques, 
 `auth.ts` configura a autenticação; `lib/server/` concentra acesso ao banco e validação; `app/api/` contém autenticação, envio de código, participação, giro e administração. As rotas derivam a identidade da sessão e verificam a autorização no servidor. As mutações verificam a origem. A migração bloqueia o acesso direto de anon/authenticated às tabelas e funções da aplicação.
 
 Códigos expiram em dez minutos, são armazenados como HMAC e consumidos uma única vez. Cinco erros bloqueiam o código; reenvio limitado por e-mail e IP. Login administrativo tem limite persistente de tentativas por usuário. A biblioteca SMTP foi atualizada, com override no package.json, para evitar a versão antiga sugerida pelo peer opcional do NextAuth. Não usamos o provedor Nodemailer interno do NextAuth.
+
+## Template do e-mail de acesso
+
+O template aprovado está em `lib/email/access-code.ts`: HTML responsivo, versão em texto simples e assunto. Usa o slogan “Pulsik, automação inteligente”. Os logos PNG otimizados ficam em `lib/email/assets.json` e seguem incorporados à mensagem por Content-ID, sem depender de URLs públicas. `lib/server/auth-service.ts` insere o código gerado e envia o conteúdo pelo SMTP existente. Não são necessárias novas variáveis de ambiente. Após publicar, solicite um código no site para conferir o recebimento no cliente de e-mail utilizado.

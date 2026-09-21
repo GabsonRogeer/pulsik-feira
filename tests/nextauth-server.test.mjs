@@ -3,7 +3,7 @@ test('server credentials, OTP and session authorization',async(t)=>{
  process.env.AUTH_SECRET='local-test-secret-not-a-deployment-secret';process.env.AUTH_URL='http://localhost:3000';
  let allowed=true,verified=false;let record={id:'id-admin',email:'a@example.com',name:'Admin',email_verified:true,is_admin:true,password_hash:hashSync('test-password',4)};
  const calls=[];const chain={select(){return this},eq(){return this},async maybeSingle(){return {data:record,error:null}}};
- const service=loadTs(new URL('../lib/server/auth-service.ts',import.meta.url),{'server-only':{},'./db':{db:()=>({from:()=>chain}),rpc:async(name,args)=>{calls.push({name,args});if(name==='pulsik_auth_limit')return allowed;if(name==='pulsik_verify_code')return verified;return {id:'id-verified',email:args.p_email}}}});
+ const service=loadTs(new URL('../lib/server/auth-service.ts',import.meta.url),{'server-only':{},'../email/access-code':{},'./db':{db:()=>({from:()=>chain}),rpc:async(name,args)=>{calls.push({name,args});if(name==='pulsik_auth_limit')return allowed;if(name==='pulsik_verify_code')return verified;return {id:'id-verified',email:args.p_email}}}});
  await t.test('password and server admin flag are both required',async()=>{
  assert.equal((await service.passwordLogin('pulsikadmin','test-password')).id,'id-admin');
  assert.equal(await service.passwordLogin('pulsikadmin','wrong'),null);
