@@ -1,6 +1,6 @@
 import { identity, checkOrigin, body, failure, json } from "@/lib/server/api";
 import { rpc } from "@/lib/server/db";
-import { CAMPAIGN } from "@/lib/config";
+import { campaignFromRequest } from "@/lib/campaign";
 export async function POST(request: Request) {
   try {
     checkOrigin(request);
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     return json(
       await rpc("pulsik_spin_v2", {
         p_user: user.id,
-        p_campaign: CAMPAIGN,
+        p_campaign: campaignFromRequest(request),
         p_request: v.requestId,
       }),
     );

@@ -1,10 +1,11 @@
+import { participationStatus } from "@/lib/campaign";
 import { formatPhone } from "@/lib/phone";
 import { Search } from "lucide-react";
 
 import { PRIZES } from "@/lib/config";
 import type { AdminModel } from "./use-admin";
 export function ParticipantsTable({ model }: { model: AdminModel }) {
-  const { query, setQuery, visible } = model;
+  const { query, setQuery, visible, statusFilter, setStatusFilter } = model;
   return (
     <section className="glass participants-panel">
       <div className="table-heading">
@@ -13,11 +14,30 @@ export function ParticipantsTable({ model }: { model: AdminModel }) {
           <Search size={17} />
           <input
             aria-label="Buscar participante"
-            placeholder="Nome, e-mail, empresa ou código"
+            placeholder="Nome, e-mail, telefone ou código"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
+      </div>
+      <div className="participant-filters">
+        <label>
+          Etapa
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">Todos os cadastros</option>
+            <option value="waiting">Aguardando primeiro giro</option>
+            <option value="retry">Nova chance disponível</option>
+            <option value="complete">Resultado final</option>
+          </select>
+        </label>
+        <p>
+          O cadastro aparece aqui antes do giro. O código CAD identifica o
+          cadastro; o código PUL ou TST autoriza a retirada na campanha
+          correspondente.
+        </p>
       </div>
       <div className="table-scroll">
         <table>
@@ -26,7 +46,7 @@ export function ParticipantsTable({ model }: { model: AdminModel }) {
               <th>Participante</th>
               <th>Empresa / Cargo</th>
               <th>Telefone</th>
-              <th>Resultado</th>
+              <th>Etapa / Resultado</th>
               <th>Retirada</th>
             </tr>
           </thead>
@@ -36,6 +56,7 @@ export function ParticipantsTable({ model }: { model: AdminModel }) {
                 <td>
                   <strong>{r.name}</strong>
                   <small>{r.email}</small>
+                  <small>{r.registration_code}</small>
                 </td>
                 <td>
                   {r.company}
@@ -43,7 +64,12 @@ export function ParticipantsTable({ model }: { model: AdminModel }) {
                 </td>
                 <td>{r.phone ? formatPhone(r.phone) : "Não informado"}</td>
                 <td>
-                  {PRIZES.find((p) => p.id === r.outcome)?.label || "Não girou"}
+                  {participationStatus(r)}
+                  {r.outcome && (
+                    <small>
+                      {PRIZES.find((p) => p.id === r.outcome)?.label}
+                    </small>
+                  )}
                   <small>{r.claim_code}</small>
                 </td>
                 <td>

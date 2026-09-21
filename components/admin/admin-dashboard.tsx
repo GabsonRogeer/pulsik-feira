@@ -16,6 +16,7 @@ import { AdminLogin } from "./admin-login";
 import { useAdmin } from "./use-admin";
 import { QrPanel } from "./qr-panel";
 import { RedemptionPanel } from "./redemption-panel";
+import { CampaignPanel } from "./campaign-panel";
 import { StockPanel } from "./stock-panel";
 import { ParticipantsTable } from "./participants-table";
 export function AdminDashboard() {
@@ -65,7 +66,7 @@ export function AdminDashboard() {
               </button>
               <button
                 className="button secondary"
-                disabled={loading}
+                disabled={loading || model.saving || model.redeeming}
                 onClick={
                   demo
                     ? () =>
@@ -78,7 +79,11 @@ export function AdminDashboard() {
                 <RefreshCw size={18} /> Atualizar
               </button>
               {!demo && (
-                <button className="button secondary" onClick={logout}>
+                <button
+                  className="button secondary"
+                  disabled={model.saving || model.redeeming}
+                  onClick={logout}
+                >
                   <LogOut size={18} />
                   Sair
                 </button>
@@ -95,11 +100,16 @@ export function AdminDashboard() {
           <AdminLogin model={model} />
         ) : (
           <>
+            <CampaignPanel model={model} />
             <div className="stats-grid">
               <div className="glass stat">
                 <Users size={20} />
-                <span>Participantes</span>
+                <span>Cadastros · {model.testing ? "teste" : "feira"}</span>
                 <strong>{rows.length}</strong>
+                <small>
+                  {rows.filter((r) => r.status === "ready").length} aguardando
+                  giro ou nova chance
+                </small>
               </div>
               <div className="glass stat">
                 <Gift size={20} />

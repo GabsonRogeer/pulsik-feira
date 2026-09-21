@@ -4,8 +4,16 @@ import { PrizeIcon } from "@/components/prize-icon";
 
 import type { ExperienceModel } from "./use-experience";
 export function SpinCard({ model }: { model: ExperienceModel }) {
-  const { demo, bonus, spinning, selection, setSelection, stock, logout } =
-    model;
+  const {
+    demo,
+    participant,
+    bonus,
+    spinning,
+    selection,
+    setSelection,
+    stock,
+    logout,
+  } = model;
   return (
     <div className="glass spin-card">
       <div className="card-heading">
@@ -23,6 +31,9 @@ export function SpinCard({ model }: { model: ExperienceModel }) {
           </p>
         </div>
       </div>
+      {participant?.registration_code && (
+        <p className="fine">Cadastro salvo · {participant.registration_code}</p>
+      )}
       <div className="prize-list">
         {PRIZES.slice(0, 3).map((p) => (
           <div key={p.id}>

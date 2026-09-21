@@ -16,6 +16,7 @@ import type { ExperienceModel } from "./use-experience";
 export function ResultView({ model }: { model: ExperienceModel }) {
   const {
     demo,
+    testing,
     participant,
     copied,
     heading,
@@ -79,13 +80,14 @@ export function ResultView({ model }: { model: ExperienceModel }) {
               <span className="status-pill">
                 {participant.redeemed_at
                   ? "Retirado"
-                  : "Reservado" + (demo ? " · teste" : "")}
+                  : "Reservado" + (demo || testing ? " · teste" : "")}
               </span>
             </div>
             <h2>{prize?.label}</h2>
             <p>
-              Você pode retirar agora ou depois, no estande da Pulsik, durante o
-              evento de 7 a 9 de outubro.
+              {testing
+                ? "Este resultado é de teste e não dá direito à retirada de um brinde real. A equipe pode simular a entrega no painel de testes."
+                : "Você pode retirar agora ou depois, no estande da Pulsik, durante o evento de 7 a 9 de outubro."}
             </p>
             <div className="ticket-divider" />
             <span className="field-caption">CÓDIGO DE RETIRADA</span>
@@ -100,7 +102,7 @@ export function ResultView({ model }: { model: ExperienceModel }) {
               </button>
             </div>
             <p className="ticket-hint">
-              {demo
+              {demo || testing
                 ? "Código demonstrativo. Não dá direito à retirada de brinde."
                 : "Apresente este código à nossa equipe. Você pode voltar a esta página com a mesma conta ou e-mail."}
             </p>

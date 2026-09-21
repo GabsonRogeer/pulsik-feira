@@ -28,7 +28,8 @@ export async function body(request: Request) {
   if (text.length > 10000) throw new Error("invalid_request");
   try {
     const parsed = JSON.parse(text);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("invalid_request");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+      throw new Error("invalid_request");
     return parsed;
   } catch {
     throw new Error("invalid_request");
@@ -44,6 +45,9 @@ export function failure(e: unknown) {
     "invalid_fields",
     "invalid_phone",
     "invalid_request",
+    "invalid_stock",
+    "stock_changed",
+    "reset_not_allowed",
     "duplicate_email",
     "invalid_email",
     "rate_limit",

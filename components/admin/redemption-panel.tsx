@@ -5,6 +5,8 @@ import type { AdminModel } from "./use-admin";
 export function RedemptionPanel({ model }: { model: AdminModel }) {
   const {
     demo,
+    testing,
+    saving,
     code,
     setCode,
     selected,
@@ -16,7 +18,11 @@ export function RedemptionPanel({ model }: { model: AdminModel }) {
   return (
     <section className="glass redeem-panel">
       <h2>Conferir retirada</h2>
-      <p>Consulte o código e confirme a entrega do brinde.</p>
+      <p>
+        {testing
+          ? "Consulte um código TST para simular a retirada. Não entregue um brinde real."
+          : "Consulte o código e confirme a entrega do brinde."}
+      </p>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -24,9 +30,9 @@ export function RedemptionPanel({ model }: { model: AdminModel }) {
         }}
       >
         <label>
-          Código do participante
+          Código de retirada
           <input
-            placeholder={demo ? "DEMO-7F3A92" : "PUL-…"}
+            placeholder={demo ? "DEMO-7F3A92" : testing ? "TST-…" : "PUL-…"}
             value={code}
             onChange={(e) => {
               setCode(e.target.value);
@@ -52,9 +58,13 @@ export function RedemptionPanel({ model }: { model: AdminModel }) {
             <button
               className="button primary"
               onClick={redeem}
-              disabled={redeeming}
+              disabled={redeeming || saving}
             >
-              {redeeming ? "Registrando…" : "Confirmar entrega do brinde"}
+              {redeeming
+                ? "Registrando…"
+                : testing
+                  ? "Confirmar retirada de teste"
+                  : "Confirmar entrega do brinde"}
             </button>
           )}
         </div>

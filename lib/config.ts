@@ -60,6 +60,8 @@ export type Participant = {
   claim_code: string | null;
   redeemed_at: string | null;
   created_at?: string;
+  registration_code?: string;
+  spin_count?: number;
 };
 export type SpinResult = {
   id: string;

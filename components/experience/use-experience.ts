@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getSession, signIn, signOut } from "next-auth/react";
+import { TEST_CAMPAIGN, campaignApi, type CampaignId } from "@/lib/campaign";
 import { api, type LoginUser } from "@/lib/api-client";
 import {
   CAMPAIGN,
@@ -15,8 +16,16 @@ import { celebrate } from "@/lib/celebrate";
 import { useEmailLogin } from "./use-email-login";
 type Step = "welcome" | "form" | "wheel" | "result";
 const DEMO_KEY = "pulsik-demo-v1";
-export function useExperience(forceDemo = false) {
+export function useExperience(
+  forceDemo = false,
+  campaign: CampaignId = CAMPAIGN,
+) {
   const demo = forceDemo;
+  const testing = campaign === TEST_CAMPAIGN;
+  const experienceError = (e: unknown) =>
+    testing && (e as Error)?.message?.includes("campaign_closed")
+      ? "A campanha de teste está pausada ou expirou. Peça à equipe para ativar os testes no painel."
+      : errorText(e);
   const [step, setStep] = useState<Step>("welcome");
   const [user, setUser] = useState<LoginUser | null>(null);
   const [participant, setParticipant] = useState<Participant | null>(null);
@@ -41,7 +50,7 @@ export function useExperience(forceDemo = false) {
       user: LoginUser;
       participant: Participant | null;
       stock: { id: string; remaining: number }[];
-    }>("/api/participation");
+    }>(campaignApi("/api/participation", campaign));
     setUser(result.user);
     setParticipant(result.participant);
     setStep(
@@ -58,7 +67,7 @@ export function useExperience(forceDemo = false) {
     try {
       await refresh();
     } catch (e) {
-      setError(errorText(e));
+      setError(experienceError(e));
     }
   });
   useEffect(() => {
@@ -83,12 +92,12 @@ export function useExperience(forceDemo = false) {
             "Não foi possível concluir o login. Tente novamente ou entre com código por e-mail.",
           );
       })
-      .catch((e) => active && setError(errorText(e)))
+      .catch((e) => active && setError(experienceError(e)))
       .finally(() => active && setInitializing(false));
     return () => {
       active = false;
     };
-  }, [demo]);
+  }, [demo, campaign]);
   useEffect(
     () => () => {
       if (timer.current) clearTimeout(timer.current);
@@ -164,9 +173,9 @@ export function useExperience(forceDemo = false) {
     setBusy(true);
     setError("");
     try {
-      await signIn("google", { callbackUrl: "/" });
+      await signIn("google", { callbackUrl: testing ? "/teste" : "/" });
     } catch (e) {
-      setError(errorText(e));
+      setError(experienceError(e));
       setBusy(false);
     }
   }
@@ -205,12 +214,15 @@ export function useExperience(forceDemo = false) {
         });
         setStep("wheel");
       } else {
-        const p = await api<Participant>("/api/participation", values);
+        const p = await api<Participant>(
+          campaignApi("/api/participation", campaign),
+          values,
+        );
         setParticipant(p);
         setStep(p.status === "complete" ? "result" : "wheel");
       }
     } catch (e) {
-      setError(errorText(e));
+      setError(experienceError(e));
     } finally {
       setBusy(false);
       lock.current = false;
@@ -240,13 +252,16 @@ export function useExperience(forceDemo = false) {
             chosen === "none" || chosen === "retry" ? null : "DEMO-7F3A92",
         };
       } else {
-        const key = "pulsik-pending:" + user!.id;
+        const key =
+          "pulsik-pending:" + campaign + ":" + participant.id + ":" + user!.id;
         let requestId = localStorage.getItem(key);
         if (!requestId) {
           requestId = crypto.randomUUID();
           localStorage.setItem(key, requestId);
         }
-        result = await api<SpinResult>("/api/spin", { requestId });
+        result = await api<SpinResult>(campaignApi("/api/spin", campaign), {
+          requestId,
+        });
         localStorage.removeItem(key);
       }
       const index = PRIZES.findIndex((p) => p.id === result.outcome);
@@ -286,7 +301,7 @@ export function useExperience(forceDemo = false) {
           : 5750,
       );
     } catch (e) {
-      setError(errorText(e));
+      setError(experienceError(e));
       setSpinning(false);
       lock.current = false;
     }
@@ -301,7 +316,7 @@ export function useExperience(forceDemo = false) {
       try {
         await signOut({ redirect: false });
       } catch (e) {
-        setError(errorText(e));
+        setError(experienceError(e));
         return;
       }
     }
@@ -327,6 +342,7 @@ export function useExperience(forceDemo = false) {
   return {
     emailLogin,
     demo,
+    testing,
     step,
     user,
     participant,

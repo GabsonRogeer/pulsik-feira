@@ -1,6 +1,8 @@
 "use client";
 import { ArrowRight, Sparkles } from "lucide-react";
 
+import { CAMPAIGN } from "@/lib/config";
+import type { CampaignId } from "@/lib/campaign";
 import { Header, Footer } from "@/components/shell";
 import { useExperience } from "./experience/use-experience";
 import { ResultView } from "./experience/result-view";
@@ -8,9 +10,15 @@ import { WelcomeCard } from "./experience/welcome-card";
 import { RegistrationForm } from "./experience/registration-form";
 import { SpinCard } from "./experience/spin-card";
 import { WheelPanel } from "./experience/wheel-panel";
-export function Experience({ forceDemo = false }: { forceDemo?: boolean }) {
-  const model = useExperience(forceDemo);
-  const { demo, step, participant, error, heading } = model;
+export function Experience({
+  forceDemo = false,
+  campaign = CAMPAIGN,
+}: {
+  forceDemo?: boolean;
+  campaign?: CampaignId;
+}) {
+  const model = useExperience(forceDemo, campaign);
+  const { demo, testing, step, participant, error, heading } = model;
   return (
     <>
       {demo && (
@@ -22,6 +30,15 @@ export function Experience({ forceDemo = false }: { forceDemo?: boolean }) {
           <a href="/admin/">
             Ver painel da equipe <ArrowRight size={13} />
           </a>
+        </div>
+      )}
+      {testing && (
+        <div className="demo-banner">
+          <span>
+            Campanha de teste · Dados salvos com estoque separado · Sem prêmio
+            real
+          </span>
+          <a href="/">Ir para a feira</a>
         </div>
       )}
       <Header />
