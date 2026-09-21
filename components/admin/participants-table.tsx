@@ -35,7 +35,7 @@ export function ParticipantsTable({ model }: { model: AdminModel }) {
         </label>
         <p>
           O cadastro aparece aqui antes do giro. O código CAD identifica o
-          cadastro; o código PUL ou TST autoriza a retirada na campanha
+          cadastro; o código PLS ou TST autoriza a retirada na campanha
           correspondente.
         </p>
       </div>

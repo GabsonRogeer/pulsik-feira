@@ -84,9 +84,36 @@ test("campaign API permits only known campaigns and never trusts caller identity
     code: "TST-1234567890ABCDEF",
   });
   assert.equal(calls[2].args.p_campaign, "siara-2026-test");
+  for (const code of [
+    "PLS-9F2RX",
+    "TST-7K3MA",
+    " tst-7k3ma ",
+    "PUL-1234567890ABCDEF",
+  ]) {
+    assert.equal(
+      (await post("siara-2026-test", { action: "redeem", code })).status,
+      200,
+    );
+  }
+  const callsBeforeInvalid = calls.length;
+  for (const code of [
+    "TST-1234",
+    "TST-AAAAAA",
+    "PLS-00000",
+    "PLS-ABCDE<script>",
+    "CAD-1234567890ABCDEF",
+    "PUL-ABCDE",
+    "",
+  ]) {
+    assert.equal(
+      (await post("siara-2026-test", { action: "redeem", code })).status,
+      400,
+    );
+  }
+  assert.equal(calls.length, callsBeforeInvalid);
   denied = true;
   await post("siara-2026-test", { action: "test_state", active: true });
-  assert.equal(calls.length, 3);
+  assert.equal(calls.length, callsBeforeInvalid);
 });
 test("registration and spin route to the selected campaign with session identity", async () => {
   const calls = [];

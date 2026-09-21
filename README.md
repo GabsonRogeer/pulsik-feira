@@ -34,8 +34,8 @@ Os testes cobrem migração de identidades, preservação de prêmios/estoques, 
 
 ## Regras da campanha
 
-- Copo: 30 unidades, 3%; chaveiro: 200, 20%; caneta: 200, 20%; sem prêmio: 47%; tente novamente: 10%.
-- Sorteio real: função `pulsik_spin_v2` na migração NextAuth. Estoque e resultado são gravados na mesma transação. Prêmio esgotado converte sua chance em sem prêmio.
+- Copo: 30 unidades, 4%; chaveiro: 200, 23%; caneta: 200, 23%; sem prêmio: 20%; tente novamente: 30%.
+- Sorteio real: função `pulsik_spin_v2`, atualizada em `202609210004_prize_chances.sql`. Estoque e resultado são gravados na mesma transação. Prêmio esgotado converte sua chance em sem prêmio.
 - Um resultado final por usuário/e-mail na campanha; tente novamente mantém o direito de girar. Repetir a mesma requisição devolve o resultado existente.
 - Telefone obrigatório com 11 dígitos. Máscara em `lib/phone.ts`: `(85) 98925-5170`.
 - Campanha aberta de 07/10/2026 00:00 a 10/10/2026 00:00, UTC−3.
@@ -60,7 +60,7 @@ Execute **uma vez** no SQL Editor a migração `supabase/migrations/202609210003
 1. Acesse `/admin` com o usuário administrativo e selecione **Teste completo · Estoque separado**.
 2. Clique em **Ativar testes por 7 dias**. Abra `/teste` em janela anônima ou outro navegador para testar como visitante sem substituir a sessão administrativa. O teste usa login Google/e-mail real, cadastro no banco, sorteio e retirada. Os envios SMTP são reais.
 3. Conclua o formulário em **Liberar meu giro**. Atualize o painel: o contato aparece como **Aguardando giro**, com código `CAD-…`, mesmo sem girar. Esse código não autoriza retirada. O painel também separa **Nova chance disponível** e **Resultado final**.
-4. Gire, entre novamente com a mesma conta e confira o resultado. Prêmios de teste recebem código `TST-…`; na feira, `PUL-…`. O admin só confirma retiradas da campanha selecionada. O mesmo e-mail pode participar uma vez em cada campanha, respeitando as novas chances.
+4. Gire, entre novamente com a mesma conta e confira o resultado. Prêmios de teste recebem código `TST-…`; na feira, `PLS-…`. O admin só confirma retiradas da campanha selecionada. O mesmo e-mail pode participar uma vez em cada campanha, respeitando as novas chances.
 5. Em **Estoque de teste** ou **Estoque da feira**, edite a quantidade disponível e clique em **Salvar estoque disponível**. A quantidade total passa a ser a soma dos prêmios já concedidos com os disponíveis. Exemplo: 1 copo concedido + 12 disponíveis = 13 no total. Prêmios concedidos não são cancelados. Se houver um giro enquanto você edita, o painel pede atualização antes de sobrescrever um estoque alterado.
 6. Para repetir os testes, exporte os contatos se necessário e abra **Limpar os dados desta campanha de teste**. Digite `LIMPAR TESTES` e confirme. Isso apaga apenas os cadastros, giros e retiradas da campanha de teste, restaura seu estoque ao total configurado e a pausa. As contas de login, administradores e campanha da feira são preservados. Ative os testes novamente e recarregue `/teste` para começar outro ciclo.
 7. Antes da feira, pause ou limpe os testes, selecione a campanha **Feira**, confira os estoques reais e use o QR Code da página `/`. Não é necessário resetar a campanha da feira para remover os testes. A página `/demo` continua sendo apenas uma simulação sem gravação no banco.
@@ -68,3 +68,11 @@ Execute **uma vez** no SQL Editor a migração `supabase/migrations/202609210003
 O admin lista todos os cadastros concluídos da campanha selecionada. Apenas autenticar não cria um participante, e tentativas de cadastro na campanha real fora da janela do evento continuam bloqueadas. Novos registros aparecem ao clicar em **Atualizar**. Exportações CSV incluem campanha, código de cadastro, etapa, resultado e código de retirada. Ajustes de estoque, ativação/pausa e limpeza são registrados em `pulsik_admin_events`.
 
 As operações administrativas exigem sessão de administrador e autorização no servidor. Estoque, giro e limpeza bloqueiam a linha da campanha dentro da transação. A limpeza recusa a campanha real tanto na API quanto no banco. Testes automatizados cobrem isolamento de campanhas, preservação dos registros reais, estoque concorrente, permissões e limpeza. O teste visual usa APIs simuladas; valide o OAuth e SMTP reais após publicar.
+
+## Atualização das probabilidades
+
+Execute `supabase/migrations/202609210004_prize_chances.sql` depois da migração de campanha de teste e publique esta versão na Vercel. O banco e a interface passam a usar 4% copo, 23% chaveiro, 23% caneta, 20% sem prêmio e 30% nova chance, tanto na feira quanto em /teste e /demo. São probabilidades por giro com estoque disponível; prêmios esgotados continuam convertendo sua chance em sem prêmio. A migração não apaga participações nem altera resultados já obtidos. Para repetir com a mesma conta, limpe e reative apenas a campanha de teste no admin.
+
+## Códigos curtos de retirada
+
+Execute `supabase/migrations/202609210005_short_claim_codes.sql` após a atualização das probabilidades e publique esta versão. Novos prêmios recebem `TST-` (teste) ou `PLS-` (feira), seguidos de cinco caracteres alfanuméricos. O alfabeto exclui I, O, 0 e 1 para facilitar a leitura. O banco verifica colisões e gera outro código, mantendo a restrição de unicidade. Resultados e códigos antigos `PUL-`/`TST-` de 16 caracteres continuam válidos; não são reescritos. Os códigos de cadastro `CAD-` não mudam.

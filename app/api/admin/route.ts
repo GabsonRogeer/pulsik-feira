@@ -73,7 +73,9 @@ export async function POST(request: Request) {
       case undefined:
         if (
           typeof v.code !== "string" ||
-          !/^(PUL|TST)-[A-F0-9]{16}$/i.test(v.code.trim())
+          !/^(?:(?:PLS|TST)-[A-HJ-NP-Z2-9]{5}|(?:PUL|TST)-[A-F0-9]{16})$/i.test(
+            v.code.trim(),
+          )
         )
           throw new Error("invalid_request");
         return json(

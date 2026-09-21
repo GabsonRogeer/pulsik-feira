@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { PGlite } from "@electric-sql/pglite";
+import { loadTs } from "./helpers/load-ts.mjs";
 test("real test campaign: isolation, unspun registrations, inventory and safe reset", async (t) => {
   const db = new PGlite();
   t.after(() => db.close());
@@ -87,6 +88,13 @@ test("real test campaign: isolation, unspun registrations, inventory and safe re
     ).rows,
   });
   const baseline = await snapshot();
+  await migrate("202609210004_prize_chances.sql");
+  await migrate("202609210005_short_claim_codes.sql");
+  assert.deepEqual(
+    await snapshot(),
+    baseline,
+    "probability and short-code migrations must preserve existing results and stock",
+  );
   const state = (active, id = admin.id) =>
     q("select public.pulsik_admin_test_state($1,$2)", [id, active]);
   const reset = (
@@ -167,7 +175,7 @@ test("real test campaign: isolation, unspun registrations, inventory and safe re
       );
       await draw(1);
       win = await spin(visitor.id, test);
-      assert.match(win.claim_code, /^TST-/);
+      assert.match(win.claim_code, /^TST-[A-HJ-NP-Z2-9]{5}$/);
       assert.equal((await spin(visitor.id, test)).id, win.id);
       assert.equal((await stocks()).find((s) => s.id === "cup").remaining, 29);
       assert.deepEqual(await snapshot(), baseline);
@@ -291,6 +299,193 @@ test("real test campaign: isolation, unspun registrations, inventory and safe re
       assert.notEqual((await register(visitor.id, test)).id, reg.id);
     },
   );
+
+  await t.test(
+    "new odds match UI and database boundaries in both campaigns",
+    async () => {
+      const { PRIZES } = loadTs(new URL("../lib/config.ts", import.meta.url));
+      assert.deepEqual(
+        PRIZES.map((p) => [p.id, p.chance]),
+        [
+          ["cup", 4],
+          ["keychain", 23],
+          ["pen", 23],
+          ["none", 20],
+          ["retry", 30],
+        ],
+      );
+      assert.equal(
+        PRIZES.reduce((sum, p) => sum + p.chance, 0),
+        100,
+      );
+      await db.exec(
+        "update public.pulsik_campaigns set active=true,starts_at=now()-interval '1 day',ends_at=now()+interval '1 day'",
+      );
+      for (const campaign of [real, test]) {
+        for (const [roll, expected] of [
+          [0, "cup"],
+          [3.999999, "cup"],
+          [4, "keychain"],
+          [26.999999, "keychain"],
+          [27, "pen"],
+          [49.999999, "pen"],
+          [50, "none"],
+          [69.999999, "none"],
+          [70, "retry"],
+          [99.999999, "retry"],
+        ]) {
+          const who = await val(
+            "select public.pulsik_verified_user($1,null) as v",
+            [randomUUID() + "@example.com"],
+          );
+          await register(who.id, campaign);
+          await draw(roll);
+          const request = randomUUID(),
+            result = await spin(who.id, campaign, request);
+          assert.equal(result.outcome, expected, campaign + " at " + roll);
+          assert.equal((await spin(who.id, campaign, request)).id, result.id);
+          if (expected !== "retry")
+            assert.equal((await spin(who.id, campaign)).id, result.id);
+          if (result.claim_code)
+            assert.ok(
+              result.claim_code.startsWith(campaign === test ? "TST-" : "PLS-"),
+            );
+        }
+      }
+    },
+  );
+  await t.test(
+    "new odds still convert an exhausted prize into no-win without negative stock",
+    async () => {
+      await q(
+        "update public.pulsik_prizes set remaining=0 where campaign_id=$1 and id='cup'",
+        [test],
+      );
+      const who = await val(
+        "select public.pulsik_verified_user('exhausted@example.com',null) as v",
+      );
+      await register(who.id, test);
+      await draw(3.999999);
+      assert.equal((await spin(who.id, test)).outcome, "none");
+      assert.equal((await stocks()).find((s) => s.id === "cup").remaining, 0);
+    },
+  );
+
+  await t.test(
+    "five-character codes use the correct prefix; legacy claims still redeem",
+    async () => {
+      for (const campaign of [real, test]) {
+        const codes = (
+          await q(
+            "select public.pulsik_new_claim_code($1) as code from generate_series(1,50)",
+            [campaign],
+          )
+        ).rows;
+        for (const { code } of codes)
+          assert.match(
+            code,
+            campaign === test
+              ? /^TST-[A-HJ-NP-Z2-9]{5}$/
+              : /^PLS-[A-HJ-NP-Z2-9]{5}$/,
+          );
+      }
+      await assert.rejects(
+        val("select public.pulsik_new_claim_code('unknown') as v"),
+        /invalid_request/,
+      );
+      assert.match(prize.claim_code, /^PUL-[A-F0-9]{16}$/);
+      const redeemed = await val(
+        "select public.pulsik_admin_redeem($1,$2,$3) as v",
+        [admin.id, real, " " + prize.claim_code.toLowerCase() + " "],
+      );
+      assert.equal(redeemed.already_redeemed, false);
+      assert.equal(redeemed.participant.claim_code, prize.claim_code);
+    },
+  );
+  await t.test(
+    "code collisions retry; persistent collisions roll back stock and spin",
+    async () => {
+      const { code: duplicate } = (
+        await q(
+          "select claim_code as code from public.pulsik_participants where campaign_id=$1 and claim_code is not null limit 1",
+          [test],
+        )
+      ).rows[0];
+      let replacement;
+      do {
+        replacement = await val(
+          "select public.pulsik_new_claim_code($1) as v",
+          [test],
+        );
+      } while (
+        (
+          await q(
+            "select 1 from public.pulsik_participants where claim_code=$1",
+            [replacement],
+          )
+        ).rows.length
+      );
+      assert.match(duplicate, /^TST-[A-HJ-NP-Z2-9]{5}$/);
+      assert.match(replacement, /^TST-[A-HJ-NP-Z2-9]{5}$/);
+      await db.exec(`create sequence public.claim_code_collision_seq;
+      create or replace function public.pulsik_new_claim_code(p_campaign text) returns text language sql volatile set search_path='' as $collision$
+      select case when nextval('public.claim_code_collision_seq')=1 then '${duplicate}' else '${replacement}' end $collision$;`);
+      const who = await val(
+        "select public.pulsik_verified_user('collision@example.com',null) as v",
+      );
+      await register(who.id, test);
+      await draw(10);
+      const won = await spin(who.id, test);
+      assert.equal(won.claim_code, replacement);
+      assert.equal(
+        Number(
+          (await q("select last_value from public.claim_code_collision_seq"))
+            .rows[0].last_value,
+        ),
+        2,
+      );
+      const before = await stocks();
+      const blocked = await val(
+        "select public.pulsik_verified_user('collision-blocked@example.com',null) as v",
+      );
+      const registration = await register(blocked.id, test);
+      // The generator now repeats the newly awarded code for all 100 attempts.
+      await assert.rejects(spin(blocked.id, test), /claim_code_unavailable/);
+      assert.deepEqual(await stocks(), before);
+      assert.equal(
+        (
+          await q(
+            "select count(*)::integer as n from public.pulsik_spins where participant_id=$1",
+            [registration.id],
+          )
+        ).rows[0].n,
+        0,
+      );
+      assert.equal(
+        (
+          await q("select status from public.pulsik_participants where id=$1", [
+            registration.id,
+          ])
+        ).rows[0].status,
+        "ready",
+      );
+      const migration = await readFile(
+        new URL(
+          "../supabase/migrations/202609210005_short_claim_codes.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      await db.exec(
+        migration.slice(
+          migration.indexOf(
+            "create or replace function public.pulsik_new_claim_code",
+          ),
+          migration.indexOf("revoke all on function"),
+        ),
+      );
+    },
+  );
   await t.test(
     "anon and authenticated cannot operate campaigns or read the admin view or audit",
     async () => {
@@ -299,6 +494,7 @@ test("real test campaign: isolation, unspun registrations, inventory and safe re
         for (const sql of [
           "select * from public.pulsik_admin_participants",
           "select * from public.pulsik_admin_events",
+          "select public.pulsik_new_claim_code('siara-2026-test')",
           `select public.pulsik_admin_test_state('${admin.id}',true)`,
           `select public.pulsik_admin_reset_test('${admin.id}','${test}','LIMPAR TESTES')`,
           `select public.pulsik_admin_stock('${admin.id}','${test}','[]')`,

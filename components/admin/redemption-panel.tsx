@@ -32,7 +32,9 @@ export function RedemptionPanel({ model }: { model: AdminModel }) {
         <label>
           Código de retirada
           <input
-            placeholder={demo ? "DEMO-7F3A92" : testing ? "TST-…" : "PUL-…"}
+            placeholder={
+              demo ? "DEMO-7F3A92" : testing ? "TST-7K3MA" : "PLS-9F2RX"
+            }
             value={code}
             onChange={(e) => {
               setCode(e.target.value);
