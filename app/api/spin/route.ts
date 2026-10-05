@@ -4,7 +4,8 @@ import { campaignFromRequest } from "@/lib/campaign";
 export async function POST(request: Request) {
   try {
     checkOrigin(request);
-    const user = await identity();
+    const campaign = campaignFromRequest(request);
+    const user = await identity(false, campaign);
     const v = await body(request);
     if (
       typeof v.requestId !== "string" ||
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     return json(
       await rpc("pulsik_spin_v2", {
         p_user: user.id,
-        p_campaign: campaignFromRequest(request),
+        p_campaign: campaign,
         p_request: v.requestId,
       }),
     );

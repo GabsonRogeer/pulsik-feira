@@ -3,7 +3,7 @@ test('server credentials, OTP and session authorization',async(t)=>{
  process.env.AUTH_SECRET='local-test-secret-not-a-deployment-secret';process.env.AUTH_URL='http://localhost:3000';
  let allowed=true,verified=false;let record={id:'id-admin',email:'a@example.com',name:'Admin',email_verified:true,is_admin:true,password_hash:hashSync('test-password',4)};
  const calls=[];const chain={select(){return this},eq(){return this},async maybeSingle(){return {data:record,error:null}}};
- const service=loadTs(new URL('../lib/server/auth-service.ts',import.meta.url),{'server-only':{},'../email/access-code':{},'./db':{db:()=>({from:()=>chain}),rpc:async(name,args)=>{calls.push({name,args});if(name==='pulsik_auth_limit')return allowed;if(name==='pulsik_verify_code')return verified;return {id:'id-verified',email:args.p_email}}}});
+ const service=loadTs(new URL('../lib/server/auth-service.ts',import.meta.url),{'server-only':{},'../auth-limits':loadTs(new URL('../lib/auth-limits.ts',import.meta.url)),'../email/access-code':{},'./db':{db:()=>({from:()=>chain}),rpc:async(name,args)=>{calls.push({name,args});if(name==='pulsik_auth_limit')return allowed;if(name==='pulsik_verify_code')return verified;return {id:'id-verified',email:args.p_email}}}});
  await t.test('password and server admin flag are both required',async()=>{
  assert.equal((await service.passwordLogin('pulsikadmin','test-password')).id,'id-admin');
  assert.equal(await service.passwordLogin('pulsikadmin','wrong'),null);
@@ -18,7 +18,7 @@ test('server credentials, OTP and session authorization',async(t)=>{
  assert.notEqual(service.digest('v@example.com:123456'),service.digest('other@example.com:123456'));
  });
  let session=null;
- const api=loadTs(new URL('../lib/server/api.ts',import.meta.url),{'server-only':{},'@/auth':{auth:async()=>session},'./db':{db:()=>({from:()=>chain})}});
+ const api=loadTs(new URL('../lib/server/api.ts',import.meta.url),{'server-only':{},'./guest':{guestIdentity:async()=>{throw Error('unauthorized')}},'@/auth':{auth:async()=>session},'./db':{db:()=>({from:()=>chain})}});
  await t.test('API requires a valid session; admin requires role and password provider',async()=>{
  await assert.rejects(api.identity(),/unauthorized/);
  session={user:{id:record.id},authMethod:'google'};await assert.rejects(api.identity(true),/forbidden/);

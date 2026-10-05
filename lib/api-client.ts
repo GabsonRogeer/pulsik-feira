@@ -1,4 +1,9 @@
-export type LoginUser = { id: string; email: string; name?: string | null };
+export type LoginUser = {
+  id: string;
+  email: string;
+  name?: string | null;
+  guest?: boolean;
+};
 export async function api<T>(url: string, body?: unknown): Promise<T> {
   const response = await fetch(url, {
     method: body === undefined ? "GET" : "POST",

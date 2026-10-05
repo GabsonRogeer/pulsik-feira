@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+.git
+.env*
+env.local
+env.nextauth.*
+work
+.agents
+.codex
+.aws
+.openai
+.sites-runtime
+*.log
+*.tsbuildinfo

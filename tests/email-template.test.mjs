@@ -51,6 +51,7 @@ test("sendCode sends the generated OTP in HTML and text and stores only its dige
   });
   let stored, message, transportOptions;
   const deleted = [];
+  const limits = [];
   let fail = false;
   const chain = {
     async upsert(row) {
@@ -69,8 +70,17 @@ test("sendCode sends the generated OTP in HTML and text and stores only its dige
     new URL("../lib/server/auth-service.ts", import.meta.url),
     {
       "server-only": {},
+      "../auth-limits": loadTs(
+        new URL("../lib/auth-limits.ts", import.meta.url),
+      ),
       "../email/access-code": template,
-      "./db": { db: () => ({ from: () => chain }), rpc: async () => true },
+      "./db": {
+        db: () => ({ from: () => chain }),
+        rpc: async (name, args) => {
+          limits.push({ name, args });
+          return true;
+        },
+      },
       nodemailer: {
         createTransport(options) {
           transportOptions = options;
@@ -93,6 +103,15 @@ test("sendCode sends the generated OTP in HTML and text and stores only its dige
   );
   assert.equal(message.attachments.length, 2);
   assert.equal(transportOptions.secure, true);
+  assert.deepEqual(
+    limits.map((x) => [x.args.p_max, x.args.p_seconds]),
+    [
+      [600, 300],
+      [1, 20],
+    ],
+  );
+  assert.equal(transportOptions.connectionTimeout, 10000);
+  assert.equal(transportOptions.socketTimeout, 15000);
   fail = true;
   await assert.rejects(
     service.sendCode("recipient@example.com", "127.0.0.1"),

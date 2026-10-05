@@ -3,8 +3,8 @@ import { db, rpc } from "@/lib/server/db";
 import { campaignFromRequest } from "@/lib/campaign";
 export async function GET(request: Request) {
   try {
-    const user = await identity();
     const campaign = campaignFromRequest(request);
+    const user = await identity(false, campaign);
     const client = db();
     const { data: participant, error } = await client
       .from("pulsik_participants")
@@ -19,7 +19,12 @@ export async function GET(request: Request) {
       .eq("campaign_id", campaign);
     if (stockError) throw stockError;
     return json({
-      user: { id: user.id, email: user.email, name: user.name },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        guest: user.guest === true,
+      },
       participant,
       stock,
     });

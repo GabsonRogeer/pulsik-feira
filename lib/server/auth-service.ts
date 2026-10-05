@@ -4,6 +4,12 @@ import { compare } from "bcryptjs";
 import nodemailer from "nodemailer";
 import { db, rpc } from "./db";
 import { accessCodeEmail } from "../email/access-code";
+import {
+  EMAIL_IP_LIMIT,
+  EMAIL_IP_WINDOW_SECONDS,
+  EMAIL_RESEND_SECONDS,
+  EMAIL_CODE_TTL_SECONDS,
+} from "../auth-limits";
 export function emailAddress(value: unknown) {
   const email = String(value || "")
     .trim()
@@ -76,8 +82,8 @@ export async function sendCode(address: unknown, ip: string) {
     SMTP_FROM: from,
   } = process.env;
   if (!host || !user || !pass || !from) throw new Error("email_unavailable");
-  await limit("mail-ip:" + ip, 15, 600);
-  await limit("mail:" + email, 1, 60);
+  await limit("mail-ip-v2:" + ip, EMAIL_IP_LIMIT, EMAIL_IP_WINDOW_SECONDS);
+  await limit("mail-v2:" + email, 1, EMAIL_RESEND_SECONDS);
   const code = String(randomInt(0, 1000000)).padStart(6, "0");
   const hash = digest(email + ":" + code);
   const { error } = await db()
@@ -85,7 +91,9 @@ export async function sendCode(address: unknown, ip: string) {
     .upsert({
       email,
       token_hash: hash,
-      expires_at: new Date(Date.now() + 600000).toISOString(),
+      expires_at: new Date(
+        Date.now() + EMAIL_CODE_TTL_SECONDS * 1000,
+      ).toISOString(),
       attempts: 0,
     });
   if (error) throw error;
@@ -97,6 +105,9 @@ export async function sendCode(address: unknown, ip: string) {
       secure: port === 465,
       requireTLS: port !== 465,
       auth: { user, pass },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
     await transport.sendMail({
       from,

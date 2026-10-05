@@ -2,6 +2,14 @@
 
 Aplicação Next.js/React/TypeScript para cadastro, roleta, comprovante, estoque e painel administrativo. Evento: 7 a 9/10/2026, Fortaleza. Interface responsiva com glassmorphism; TSX para apresentação, hooks TS para comportamento e CSS em `styles/`.
 
+## Arquitetura atual
+
+- **Vercel:** hospedagem do front-end Next.js e das rotas de servidor.
+- **Supabase:** banco PostgreSQL com cadastros, participações, sorteios e estoque.
+- **SMTP:** envio dos códigos de acesso por e-mail.
+
+Google e códigos por e-mail são autenticados pelo NextAuth na aplicação. A entrada como convidado utiliza uma sessão própria e não depende de envio por SMTP.
+
 ## Autenticação e banco
 
 NextAuth gerencia Google, código de seis dígitos por e-mail e usuário/senha do administrador. Supabase é usado somente como banco, acessado pelas rotas do servidor. O navegador não recebe a chave de serviço. A implementação usa NextAuth **5.0.0-beta.32**, fixado no package.json, com sessões JWT de oito horas.
@@ -9,6 +17,8 @@ NextAuth gerencia Google, código de seis dígitos por e-mail e usuário/senha d
 Google e e-mail confirmado convergem para o mesmo usuário pelo e-mail normalizado. O painel exige login pelo provedor de credenciais administrativo e autorização atual no banco. Entrar com Google no e-mail do administrador não libera o painel. A sessão do navegador é compartilhada: entrar no painel substitui a sessão de participante.
 
 ## Ativar a migração na Vercel
+
+Para desenvolvimento local, crie **`.env.local`** na raiz (com o ponto inicial), usando as variáveis de `.env.nextauth.example`, e configure `AUTH_URL=http://localhost:3000`. Reinicie `npm run dev` após configurar o arquivo. Os nomes `env.local` e `env.nextauth.private` não são carregados automaticamente pelo Next.js; sem `AUTH_SECRET`, as rotas de autenticação retornam erro de configuração (`ClientFetchError` no navegador). Para testar Google localmente, cadastre também `http://localhost:3000/api/auth/callback/google` como URI de redirecionamento no cliente OAuth.
 
 1. Use `.env.nextauth.example` como referência para preencher `.env.local` e as variáveis de ambiente da Vercel. O antigo `.env.example`, com variáveis públicas, corresponde à integração anterior e não configura esta versão. Gere `AUTH_SECRET` com `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Não versione os valores reais.
 2. Configure `AUTH_URL=https://pulsik-feira.vercel.app`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`. A chave service_role fica exclusivamente no servidor, nunca em uma variável `NEXT_PUBLIC_`.
@@ -26,9 +36,11 @@ Para testes locais, use `AUTH_URL=http://localhost:3000` e autorize `http://loca
 
 O administrador já autorizado em `pulsik_admins` é migrado com seu UUID e hash de senha. O usuário `pulsikadmin` é associado ao e-mail administrativo existente. A senha não fica no código ou nas variáveis públicas. `supabase/setup-admin.sql` contém as instruções para provisionar uma nova conta diretamente nas tabelas da aplicação, sem Supabase Auth.
 
+Para recuperar a senha, use um novo hash bcrypt de custo 12 em `supabase/setup-admin.sql` e altere `v_reset_password` para `true` antes de executar no SQL Editor. O script preserva o UUID e os vínculos da conta administrativa existente; não é necessário excluí-la. Ele não promove um participante existente a administrador. A troca de senha não encerra sessões NextAuth já abertas, que expiram em até oito horas. Se houve bloqueio por tentativas de login, aguarde a janela de quinze minutos.
+
 ## Rodar e verificar
 
-Node.js 22 ou posterior. Execute `npm ci`, `npm run dev`. Verificação: `npm run typecheck`, `npm test`, `npm run build`.
+Node.js 24 e npm 11.17.0. Execute `npm ci`, `npm run dev`. Verificação: `npm run typecheck`, `npm test`, `npm run build`. Para servir o build de produção, execute `npm start`.
 
 Os testes cobrem migração de identidades, preservação de prêmios/estoques, permissões das rotas e do banco, senha administrativa, código de uso único, limites de tentativas, telefone, probabilidades, idempotência e retirada. Usam PostgreSQL local via PGlite e substitutos dos serviços externos; não substituem o login real no Google e a entrega real de mensagens SMTP.
 
@@ -47,7 +59,21 @@ Os testes cobrem migração de identidades, preservação de prêmios/estoques, 
 
 `auth.ts` configura a autenticação; `lib/server/` concentra acesso ao banco e validação; `app/api/` contém autenticação, envio de código, participação, giro e administração. As rotas derivam a identidade da sessão e verificam a autorização no servidor. As mutações verificam a origem. A migração bloqueia o acesso direto de anon/authenticated às tabelas e funções da aplicação.
 
-Códigos expiram em dez minutos, são armazenados como HMAC e consumidos uma única vez. Cinco erros bloqueiam o código; reenvio limitado por e-mail e IP. Login administrativo tem limite persistente de tentativas por usuário. A biblioteca SMTP foi atualizada, com override no package.json, para evitar a versão antiga sugerida pelo peer opcional do NextAuth. Não usamos o provedor Nodemailer interno do NextAuth.
+Códigos expiram em dez minutos, são armazenados como HMAC e consumidos uma única vez. Cinco erros bloqueiam o código; são permitidas 600 solicitações por IP em 5 minutos e um envio por e-mail a cada 20 segundos (até 3 por minuto). O contador e a interface usam `lib/auth-limits.ts`. As novas chaves de contagem não herdam bloqueios da configuração anterior. Login administrativo tem limite persistente de tentativas por usuário. A biblioteca SMTP foi atualizada, com override no package.json, para evitar a versão antiga sugerida pelo peer opcional do NextAuth. Não usamos o provedor Nodemailer interno do NextAuth.
+
+## Entrada como convidado e limites para a feira
+
+Antes de publicar esta versão, aplique **uma vez** `supabase/migrations/20261005230228_guest_registration.sql`, após as migrações anteriores. Ela adiciona sessões de convidados e uma função de cadastro atômico; não modifica usuários, resultados, probabilidades ou estoques existentes. Depois publique a aplicação. Não há novas variáveis obrigatórias. Para reverter o código, as estruturas novas podem permanecer no banco.
+
+**Entrar como convidado** abre o formulário com e-mail editável, sem enviar mensagem SMTP. O servidor normaliza o e-mail e cria usuário, participação e sessão na mesma transação. Se o e-mail já existir em `pulsik_users`, inclusive por login Google, código ou cadastro de teste, o novo cadastro é recusado com uma mensagem amigável. A pessoa pode confirmar esse mesmo e-mail por Google/código para acessar a conta existente. A restrição única do banco também protege contra solicitações concorrentes.
+
+A sessão usa um segredo aleatório de 256 bits em cookie HttpOnly, SameSite=Lax e Secure em HTTPS; somente o HMAC é armazenado no banco. Dura até 8 horas e só autoriza a participação da campanha cadastrada. Atualizar a página ou repetir um envio após falha de rede mantém o cadastro e o resultado. **Trocar/Sair** revoga a sessão de convidado. Entrar com Google/código confirma a conta existente, preserva seu UUID e resultado e invalida os acessos de convidado. Nenhuma sessão de convidado autoriza o painel administrativo.
+
+O e-mail de convidado permanece **não verificado**. Esse fluxo evita dependência do SMTP, mas não comprova que a pessoa controla o endereço nem impede alguém de informar endereços diferentes. Para recuperar a participação após sair ou expirar a sessão, é necessário confirmar o e-mail. Limpar a campanha de teste remove suas sessões de convidado, mas preserva usuários; use um e-mail de teste diferente ou entre por Google/código para reutilizar uma conta já criada.
+
+O cadastro de convidados tem limite independente de 600 solicitações por IP em 5 minutos. Na Vercel, o IP vem de `X-Vercel-Forwarded-For`, com a plataforma detectada pela variável padrão `VERCEL`. No desenvolvimento local, utiliza-se `X-Forwarded-For`; IP ausente/inválido usa um contador compartilhado. O limite por IP protege a aplicação, mas não aumenta as cotas do provedor SMTP. Os envios possuem tempos máximos de conexão/saudação de 10 segundos e de inatividade de 15 segundos.
+
+Validação antes da feira: em `/teste`, cadastre um convidado com e-mail novo, atualize a página, gire e confira o mesmo resultado após nova atualização. Em outro navegador, tente cadastrar o mesmo e-mail e confirme a mensagem de duplicidade. Entre por código/Google com esse e-mail e confirme que o resultado foi preservado. Confira também envio/reenvio de código e os limites do seu provedor. Os testes automatizados usam PGlite e serviços simulados; não comprovam capacidade ou entrega do SMTP em produção.
 
 ## Template do e-mail de acesso
 

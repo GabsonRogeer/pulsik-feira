@@ -3,14 +3,25 @@ import { formatPhone } from "@/lib/phone";
 
 import type { ExperienceModel } from "./use-experience";
 export function RegistrationForm({ model }: { model: ExperienceModel }) {
-  const { demo, user, busy, register, logout } = model;
+  const { demo, guest, user, busy, register, logout } = model;
   return (
     <form className="glass form-card" onSubmit={register}>
       <div className="signed-in">
         <ShieldCheck size={17} />
-        <span>{demo ? "Cadastro de demonstração" : user?.email}</span>
+        <span>
+          {demo
+            ? "Cadastro de demonstração"
+            : guest
+              ? "Cadastro de convidado"
+              : user?.email}
+        </span>
         {!demo && (
-          <button type="button" className="text-button" onClick={logout}>
+          <button
+            type="button"
+            className="text-button"
+            disabled={busy}
+            onClick={logout}
+          >
             Trocar
           </button>
         )}
@@ -55,15 +66,23 @@ export function RegistrationForm({ model }: { model: ExperienceModel }) {
           <input
             name="email"
             type="email"
-            value={demo ? "visitante@exemplo.com" : user?.email || ""}
-            readOnly
+            defaultValue={demo ? "visitante@exemplo.com" : user?.email || ""}
+            readOnly={!guest}
+            required
+            maxLength={254}
+            autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder="voce@empresa.com.br"
             aria-describedby="email-note"
           />
         </label>
         <span id="email-note" className="input-note full">
           {demo
             ? "Usamos um e-mail fictício nesta demonstração."
-            : "E-mail verificado no seu acesso."}
+            : guest
+              ? "Use seu e-mail. Se ele já estiver cadastrado, entre com Google ou código por e-mail para retomar sua participação."
+              : "E-mail verificado no seu acesso."}
         </span>
         <label className="full">
           Telefone

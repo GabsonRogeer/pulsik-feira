@@ -6,5 +6,8 @@ out/
 *.tsbuildinfo
 .sites-runtime/
 work/
+supabase/.temp/
 
 .env.nextauth.example
+env.local
+env.nextauth.private

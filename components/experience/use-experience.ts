@@ -27,6 +27,7 @@ export function useExperience(
       ? "A campanha de teste está pausada ou expirou. Peça à equipe para ativar os testes no painel."
       : errorText(e);
   const [step, setStep] = useState<Step>("welcome");
+  const [guest, setGuest] = useState(false);
   const [user, setUser] = useState<LoginUser | null>(null);
   const [participant, setParticipant] = useState<Participant | null>(null);
   const [busy, setBusy] = useState(false);
@@ -52,6 +53,7 @@ export function useExperience(
       stock: { id: string; remaining: number }[];
     }>(campaignApi("/api/participation", campaign));
     setUser(result.user);
+    setGuest(result.user.guest === true);
     setParticipant(result.participant);
     setStep(
       result.participant
@@ -85,7 +87,14 @@ export function useExperience(
     }
     getSession()
       .then(async (session) => {
-        if (active && session?.user) await refresh();
+        if (active) {
+          try {
+            await refresh();
+          } catch (e) {
+            if (session?.user || (e as { status?: number }).status !== 401)
+              throw e;
+          }
+        }
         const error = new URLSearchParams(window.location.search).get("error");
         if (active && error)
           setError(
@@ -179,6 +188,22 @@ export function useExperience(
       setBusy(false);
     }
   }
+  async function enterGuest() {
+    if (lock.current) return;
+    lock.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      await api(campaignApi("/api/guest", campaign), { action: "start" });
+      setGuest(true);
+      setStep("form");
+    } catch (e) {
+      setError(experienceError(e));
+    } finally {
+      setBusy(false);
+      lock.current = false;
+    }
+  }
   async function register(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (lock.current) return;
@@ -213,6 +238,15 @@ export function useExperience(
           redeemed_at: null,
         });
         setStep("wheel");
+      } else if (guest) {
+        await api<Participant>(campaignApi("/api/guest", campaign), {
+          action: "register",
+          email: String(f.get("email") || "")
+            .trim()
+            .toLowerCase(),
+          ...values,
+        });
+        await refresh();
       } else {
         const p = await api<Participant>(
           campaignApi("/api/participation", campaign),
@@ -314,6 +348,8 @@ export function useExperience(
       } catch {}
     } else {
       try {
+        const response = await fetch("/api/guest", { method: "DELETE" });
+        if (!response.ok) throw new Error("logout_failed");
         await signOut({ redirect: false });
       } catch (e) {
         setError(experienceError(e));
@@ -322,6 +358,7 @@ export function useExperience(
     }
     emailLogin.reset();
     setUser(null);
+    setGuest(false);
     setParticipant(null);
     setStep("welcome");
     setBonus(false);
@@ -342,6 +379,8 @@ export function useExperience(
   return {
     emailLogin,
     demo,
+    guest,
+    enterGuest,
     testing,
     step,
     user,

@@ -1,9 +1,13 @@
 import "server-only";
 import { auth } from "@/auth";
 import { db } from "./db";
-export async function identity(admin = false) {
+import { guestIdentity } from "./guest";
+export async function identity(admin = false, campaign?: string) {
   const session = await auth();
-  if (!session?.user?.id) throw new Error("unauthorized");
+  if (!session?.user?.id) {
+    if (!admin && campaign) return guestIdentity(campaign);
+    throw new Error("unauthorized");
+  }
   const { data, error } = await db()
     .from("pulsik_users")
     .select("id,email,name,is_admin,email_verified")
@@ -14,7 +18,7 @@ export async function identity(admin = false) {
   // An administrator must use the username/password provider, not a participant login.
   if (admin && (!data.is_admin || session.authMethod !== "admin"))
     throw new Error("forbidden");
-  return data;
+  return { ...data, guest: false };
 }
 export function checkOrigin(request: Request) {
   const expected = process.env.AUTH_URL;

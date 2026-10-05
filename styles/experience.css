@@ -674,6 +674,13 @@ h1:focus {
 .email-login {
   margin-top: 16px;
 }
+.guest-login {
+  margin-top: 24px;
+}
+.guest-login .input-note {
+  margin: 12px 0 0;
+  line-height: 1.5;
+}
 .auth-divider {
   display: flex;
   align-items: center;

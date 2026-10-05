@@ -67,9 +67,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   logger: {
-    error() {
+    error(error) {
+      const type =
+        "type" in error && typeof error.type === "string"
+          ? error.type
+          : "AuthError";
       console.error(
-        "Authentication failed; check server configuration and database availability.",
+        `[auth] ${type}: authentication failed.`,
+        type === "MissingSecret"
+          ? "Set AUTH_SECRET in .env.local or the deployment environment, then restart the server."
+          : "Check server configuration and database availability.",
       );
     },
   },

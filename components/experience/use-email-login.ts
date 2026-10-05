@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { LoginUser } from "@/lib/api-client";
+import { EMAIL_RESEND_SECONDS } from "@/lib/auth-limits";
 import {
   emailAuthError,
   sendEmailCode,
@@ -39,8 +40,8 @@ export function useEmailLogin(onVerified: (user: LoginUser) => Promise<void>) {
     setNotice("");
     try {
       const address = await sendEmailCode(sentEmail || email);
-      resendAt.current = Date.now() + 60000;
-      setRemaining(60);
+      resendAt.current = Date.now() + EMAIL_RESEND_SECONDS * 1000;
+      setRemaining(EMAIL_RESEND_SECONDS);
       setSentEmail(address);
       setCode("");
       setNotice("Código solicitado. Confira sua caixa de entrada e o spam.");
@@ -48,8 +49,8 @@ export function useEmailLogin(onVerified: (user: LoginUser) => Promise<void>) {
     } catch (e) {
       setError(emailAuthError(e));
       if ((e as { status?: number })?.status === 429) {
-        resendAt.current = Date.now() + 60000;
-        setRemaining(60);
+        resendAt.current = Date.now() + EMAIL_RESEND_SECONDS * 1000;
+        setRemaining(EMAIL_RESEND_SECONDS);
       }
     } finally {
       lock.current = false;
@@ -80,7 +81,7 @@ export function useEmailLogin(onVerified: (user: LoginUser) => Promise<void>) {
     setCode("");
     setError("");
     setNotice("");
-    // The Supabase server also enforces its own send limits.
+    // Changing this UI state does not bypass the server's per-email limit.
     resendAt.current = 0;
     setRemaining(0);
   }

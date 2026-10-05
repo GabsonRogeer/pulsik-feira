@@ -18,7 +18,10 @@ export default function Privacy() {
           identificar sua participação no Siará Tech Summit, impedir cadastros
           repetidos e organizar a entrega dos brindes. O login com Google ou
           código por e-mail identifica sua conta; não pedimos acesso ao Gmail ou
-          aos seus arquivos.
+          aos seus arquivos. Na entrada como convidado, o e-mail é informado por
+          você e não é verificado nesse momento. Usamos um cookie de sessão por
+          até 8 horas para permitir que você retome sua participação neste
+          navegador.
         </p>
         <h2>Novidades da Pulsik</h2>
         <p>

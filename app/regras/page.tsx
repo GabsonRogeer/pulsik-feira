@@ -15,9 +15,9 @@ export default function Rules() {
         </h1>
         <p>
           A ação da Pulsik acontece de 7 a 9 de outubro de 2026, no Siará Tech
-          Summit. Entre com Google ou código por e-mail, complete o cadastro e
-          utilize seu giro inicial. É permitida uma participação por
-          conta/e-mail durante todo o evento.
+          Summit. Entre com Google, código por e-mail ou como convidado,
+          complete o cadastro e utilize seu giro inicial. É permitida uma
+          participação por conta/e-mail durante todo o evento.
         </p>
         <h2>Resultados e chances</h2>
         <ul>
@@ -46,6 +46,12 @@ export default function Rules() {
           Se a conexão cair, entre novamente com a mesma conta para retomar sua
           participação ou consultar o resultado. O sorteio salvo não é
           substituído.
+        </p>
+        <p>
+          Como convidado, informe seu próprio e-mail. Um e-mail já cadastrado
+          precisa de acesso com Google ou código por e-mail. A sessão de
+          convidado dura até 8 horas neste navegador; depois disso, confirme o
+          mesmo e-mail para acessar sua participação e o resultado salvo.
         </p>
         <p className="notice">
           A demonstração é apenas um teste da experiência e não concede brindes.

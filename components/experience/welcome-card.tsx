@@ -4,12 +4,13 @@ import {
   LoaderCircle,
   ShieldCheck,
   Sparkles,
+  UserRound,
 } from "lucide-react";
 
 import { EmailLogin } from "./email-login";
 import type { ExperienceModel } from "./use-experience";
 export function WelcomeCard({ model }: { model: ExperienceModel }) {
-  const { demo, busy, initializing, login, emailLogin } = model;
+  const { demo, busy, initializing, login, emailLogin, enterGuest } = model;
   return (
     <div className="glass entry-card">
       <div className="card-heading">
@@ -45,12 +46,32 @@ export function WelcomeCard({ model }: { model: ExperienceModel }) {
         <ArrowRight size={18} />
       </button>
       {!demo && (
-        <EmailLogin model={emailLogin} disabled={busy || initializing} />
+        <>
+          <EmailLogin model={emailLogin} disabled={busy || initializing} />
+          <div className="guest-login">
+            <div className="auth-divider">
+              <span>ou</span>
+            </div>
+            <button
+              className="button secondary"
+              disabled={busy || initializing || emailLogin.busy}
+              onClick={enterGuest}
+            >
+              <UserRound size={19} />
+              Entrar como convidado
+              <ArrowRight size={18} />
+            </button>
+            <p className="input-note">
+              Preencha seu cadastro e participe sem esperar um código por
+              e-mail.
+            </p>
+          </div>
+        </>
       )}
       <p className="fine">
         <ShieldCheck size={15} />
         {demo
-          ? "Na feira, acesso com Google ou código por e-mail."
+          ? "Na feira, acesso com Google, e-mail ou como convidado."
           : "Uma participação por conta/e-mail durante o evento."}
       </p>
     </div>
