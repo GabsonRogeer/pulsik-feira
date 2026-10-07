@@ -95,7 +95,17 @@ O admin lista todos os cadastros concluídos da campanha selecionada. Apenas aut
 
 As operações administrativas exigem sessão de administrador e autorização no servidor. Estoque, giro e limpeza bloqueiam a linha da campanha dentro da transação. A limpeza recusa a campanha real tanto na API quanto no banco. Testes automatizados cobrem isolamento de campanhas, preservação dos registros reais, estoque concorrente, permissões e limpeza. O teste visual usa APIs simuladas; valide o OAuth e SMTP reais após publicar.
 
-## Atualização das probabilidades
+## Porcentagens editáveis no admin
+
+Antes de publicar esta versão, aplique **uma vez** `supabase/migrations/20261007183931_configurable_prize_chances.sql`, após as migrações anteriores. Ela mantém as chances iniciais de 4/23/23/20/30 e preserva estoques, participantes, códigos e resultados já salvos.
+
+Em `/admin`, selecione a campanha e use **Chances da roleta** para ajustar copo, chaveiro, caneta, “Não foi dessa vez” e “Tente outra vez”. Clique em **Salvar porcentagens**. Os campos aceitam até duas casas decimais, valores de 0 a 100 e exigem soma de 100%. “Tente outra vez” deve ficar abaixo de 100%, para que a participação possa terminar.
+
+Os próximos giros usam as chances salvas na campanha, dentro da mesma transação do estoque. Feira e teste têm configurações independentes; limpar os testes preserva suas porcentagens. Resultados anteriores e repetições da mesma requisição não são sorteados novamente. Produto esgotado continua convertendo sua chance em “Não foi dessa vez”.
+
+As mudanças exigem administrador, são registradas em `pulsik_admin_events` e recusam sobrescrever uma configuração alterada por outra pessoa enquanto o formulário estava aberto. Nesse caso, clique em **Atualizar** e revise os valores. A roleta e `/regras` consultam as chances atuais, atualizando a cada 30 segundos e ao voltar à janela. `/demo` permanece uma simulação local com as porcentagens padrão de `lib/config.ts`.
+
+## Atualização das probabilidades (configuração inicial)
 
 Execute `supabase/migrations/202609210004_prize_chances.sql` depois da migração de campanha de teste e publique esta versão na Vercel. O banco e a interface passam a usar 4% copo, 23% chaveiro, 23% caneta, 20% sem prêmio e 30% nova chance, tanto na feira quanto em /teste e /demo. São probabilidades por giro com estoque disponível; prêmios esgotados continuam convertendo sua chance em sem prêmio. A migração não apaga participações nem altera resultados já obtidos. Para repetir com a mesma conta, limpe e reative apenas a campanha de teste no admin.
 

@@ -1,5 +1,5 @@
 import { ArrowRight, RotateCw, Sparkles } from "lucide-react";
-import { PRIZES } from "@/lib/config";
+import { ChancesList } from "@/components/chances-list";
 
 import { Wheel } from "@/components/wheel";
 
@@ -49,14 +49,7 @@ export function WheelPanel({ model }: { model: ExperienceModel }) {
       )}
       <details className="odds">
         <summary>Chances e regras da roleta</summary>
-        <ul>
-          {PRIZES.map((p) => (
-            <li key={p.id}>
-              <span>{p.label}</span>
-              <b>{p.chance}%</b>
-            </li>
-          ))}
-        </ul>
+        <ChancesList campaign={model.campaign} demo={model.demo} />
         <p>
           As fatias ilustram os resultados; não representam suas chances. Se um
           brinde acabar, sua chance passa para “Não foi dessa vez”. “Tente outra

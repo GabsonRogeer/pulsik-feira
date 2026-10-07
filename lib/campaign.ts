@@ -1,4 +1,5 @@
 ﻿import { CAMPAIGN } from "./config";
+import type { Chances } from "./chances";
 export const TEST_CAMPAIGN = "siara-2026-test";
 export type CampaignId = typeof CAMPAIGN | typeof TEST_CAMPAIGN;
 export type CampaignInfo = {
@@ -6,6 +7,7 @@ export type CampaignInfo = {
   active: boolean;
   starts_at: string;
   ends_at: string;
+  chances: Chances;
 };
 export type StockItem = {
   id: "cup" | "keychain" | "pen";

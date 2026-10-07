@@ -29,6 +29,9 @@ test("campaign API permits only known campaigns and never trusts caller identity
       },
     },
     "@/lib/campaign": campaigns,
+    "@/lib/chances": loadTs(new URL("../lib/chances.ts", import.meta.url), {
+      "./config": config,
+    }),
   });
   const post = (campaign, body) =>
     route.POST(

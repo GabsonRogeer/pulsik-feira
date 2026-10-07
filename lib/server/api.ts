@@ -51,6 +51,8 @@ export function failure(e: unknown) {
     "invalid_request",
     "invalid_stock",
     "stock_changed",
+    "invalid_chances",
+    "chances_changed",
     "reset_not_allowed",
     "duplicate_email",
     "invalid_email",

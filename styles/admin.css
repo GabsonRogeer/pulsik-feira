@@ -483,3 +483,29 @@ td small {
 .participants-panel td:first-child {
   min-width: 230px;
 }
+.chances-panel {
+  padding: 27px;
+  margin-top: 24px;
+}
+.chances-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+.admin-layout .chances-valid {
+  color: #9ee4bc;
+}
+.admin-layout .chances-invalid {
+  color: #ffb4be;
+}
+@media (max-width: 760px) {
+  .chances-panel {
+    padding: 23px;
+  }
+}
+@media print {
+  .chances-panel {
+    display: none !important;
+  }
+}

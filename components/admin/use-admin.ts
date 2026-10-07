@@ -1,6 +1,7 @@
 ﻿"use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { CAMPAIGN, type Participant } from "@/lib/config";
+import { CAMPAIGN, PRIZES, type Participant } from "@/lib/config";
+import { parseChancesDraft } from "@/lib/chances";
 import {
   campaignApi,
   TEST_CAMPAIGN,
@@ -27,6 +28,7 @@ export function useAdmin() {
   const [campaignId, setCampaignId] = useState<CampaignId>(CAMPAIGN);
   const [campaign, setCampaign] = useState<CampaignInfo | null>(null);
   const [stock, setStock] = useState<StockItem[]>([]);
+  const [chancesDraft, setChancesDraft] = useState<Record<string, string>>({});
   const [stockDraft, setStockDraft] = useState<Record<string, string>>({
     cup: "0",
     keychain: "0",
@@ -61,6 +63,11 @@ export function useAdmin() {
       setRows(data.rows);
       setStock(data.stock);
       setCampaign(data.campaign);
+      setChancesDraft(
+        Object.fromEntries(
+          PRIZES.map(({ id }) => [id, String(data.campaign.chances[id])]),
+        ),
+      );
       setStockDraft(
         Object.fromEntries(data.stock.map((x) => [x.id, String(x.remaining)])),
       );
@@ -75,7 +82,7 @@ export function useAdmin() {
       setCampaign(null);
       if (![401, 403].includes((e as { status: number }).status))
         setMessage(
-          "Não foi possível carregar o painel. Confira a conexão e se a migração da campanha de teste foi executada.",
+          "Não foi possível carregar o painel. Confira a conexão e se as migrações do banco foram executadas.",
         );
     } finally {
       if (version === accessVersion.current) setLoading(false);
@@ -161,13 +168,17 @@ export function useAdmin() {
     } catch (e) {
       const error = (e as Error).message;
       setMessage(
-        error.includes("stock_changed")
-          ? "O estoque mudou enquanto você editava. Clique em Atualizar, confira os valores e tente novamente."
-          : error.includes("invalid_stock")
-            ? "Informe quantidades inteiras entre 0 e 100.000."
-            : error.includes("reset_not_allowed")
-              ? "A limpeza exige a confirmação LIMPAR TESTES e só vale para a campanha de teste."
-              : "Não foi possível salvar. Confira sua sessão e tente novamente.",
+        error.includes("chances_changed")
+          ? "As porcentagens foram alteradas por outra pessoa. Clique em Atualizar para conferir antes de salvar novamente."
+          : error.includes("invalid_chances")
+            ? "Informe porcentagens entre 0 e 100, com até duas casas decimais e soma de 100%. Tente outra vez deve ficar abaixo de 100%."
+            : error.includes("stock_changed")
+              ? "O estoque mudou enquanto você editava. Clique em Atualizar, confira os valores e tente novamente."
+              : error.includes("invalid_stock")
+                ? "Informe quantidades inteiras entre 0 e 100.000."
+                : error.includes("reset_not_allowed")
+                  ? "A limpeza exige a confirmação LIMPAR TESTES e só vale para a campanha de teste."
+                  : "Não foi possível salvar. Confira sua sessão e tente novamente.",
       );
     } finally {
       operationLock.current = false;
@@ -197,6 +208,20 @@ export function useAdmin() {
         })),
       },
       "Estoque atualizado. Os prêmios já concedidos foram preservados.",
+    );
+  }
+  async function saveChances(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const chances = parseChancesDraft(chancesDraft);
+    if (!chances || !campaign) {
+      setMessage(
+        "As porcentagens devem somar 100%, com até duas casas decimais. Tente outra vez deve ficar abaixo de 100%.",
+      );
+      return;
+    }
+    await operate(
+      { action: "chances", chances, expected: campaign.chances },
+      "Porcentagens salvas. Os próximos giros desta campanha já usarão as novas chances.",
     );
   }
   async function toggleTests() {
@@ -318,6 +343,9 @@ export function useAdmin() {
     setStockDraft,
     saving,
     saveStock,
+    chancesDraft,
+    setChancesDraft,
+    saveChances,
     toggleTests,
     resetConfirmation,
     setResetConfirmation,

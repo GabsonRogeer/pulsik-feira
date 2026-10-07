@@ -1,5 +1,5 @@
 import { Header, Footer } from "@/components/shell";
-import { PRIZES } from "@/lib/config";
+import { ChancesList } from "@/components/chances-list";
 export default function Rules() {
   return (
     <>
@@ -20,14 +20,7 @@ export default function Rules() {
           participação por conta/e-mail durante todo o evento.
         </p>
         <h2>Resultados e chances</h2>
-        <ul>
-          {PRIZES.map((p) => (
-            <li key={p.id}>
-              {p.label}: {p.chance}%
-              {p.stock ? ` · ${p.stock} unidades no total` : ""}.
-            </li>
-          ))}
-        </ul>
+        <ChancesList />
         <p>
           “Tente outra vez” concede uma nova chance na mesma participação,
           sempre que for sorteado. Um prêmio ou “Não foi dessa vez” encerra a

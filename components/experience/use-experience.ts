@@ -378,6 +378,7 @@ export function useExperience(
   }
   return {
     emailLogin,
+    campaign,
     demo,
     guest,
     enterGuest,

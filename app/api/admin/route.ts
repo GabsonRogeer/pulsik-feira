@@ -2,6 +2,7 @@
 import { db, rpc } from "@/lib/server/db";
 import { campaignFromRequest, TEST_CAMPAIGN } from "@/lib/campaign";
 import type { Participant } from "@/lib/config";
+import { validChances } from "@/lib/chances";
 export async function GET(request: Request) {
   try {
     await identity(true);
@@ -9,7 +10,7 @@ export async function GET(request: Request) {
     const client = db();
     const { data: campaign, error: campaignError } = await client
       .from("pulsik_campaigns")
-      .select("id,active,starts_at,ends_at")
+      .select("id,active,starts_at,ends_at,chances")
       .eq("id", campaignId)
       .single();
     if (campaignError) throw campaignError;
@@ -43,6 +44,16 @@ export async function POST(request: Request) {
     const campaign = campaignFromRequest(request);
     const v = await body(request);
     switch (v.action) {
+      case "chances":
+        if (!validChances(v.chances) || !validChances(v.expected))
+          throw new Error("invalid_chances");
+        await rpc("pulsik_admin_chances", {
+          p_user: user.id,
+          p_campaign: campaign,
+          p_chances: v.chances,
+          p_expected: v.expected,
+        });
+        return json({ ok: true });
       case "stock":
         if (!Array.isArray(v.stock)) throw new Error("invalid_stock");
         await rpc("pulsik_admin_stock", {

@@ -18,6 +18,7 @@ import { QrPanel } from "./qr-panel";
 import { RedemptionPanel } from "./redemption-panel";
 import { CampaignPanel } from "./campaign-panel";
 import { StockPanel } from "./stock-panel";
+import { ChancesPanel } from "./chances-panel";
 import { ParticipantsTable } from "./participants-table";
 export function AdminDashboard() {
   const model = useAdmin();
@@ -127,6 +128,7 @@ export function AdminDashboard() {
               <RedemptionPanel model={model} />
               <StockPanel model={model} />
             </div>
+            <ChancesPanel model={model} />
             <ParticipantsTable model={model} />
           </>
         )}
